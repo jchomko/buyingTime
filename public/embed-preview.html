@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Buying Time Embed Preview</title>
+    <style>
+      html, body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+        color: #fff;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      #app {
+        position: fixed;
+        inset: 0;
+      }
+
+      #preview-canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .overlay {
+        position: absolute;
+        left: 0.75rem;
+        bottom: 0.75rem;
+        z-index: 2;
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        background: rgba(0, 0, 0, 0.55);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 6px;
+        padding: 0.4rem 0.55rem;
+        line-height: 1.35;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="preview-canvas"></canvas>
+      <div id="meta" class="overlay"></div>
+    </div>
+
+    <script type="module">
+      import { mountSingleClock } from '/src/render/clockHullMount.js'
+      import { DEFAULT_SWAP_PARAMS, getSecondInMinuteFromDate } from '/src/render/clockHullRenderer.js'
+      import { TOTAL_SQUARES, normalizeMinuteIndex, resolveGridDims } from '/src/timeGrid.js'
+
+      const params = new URLSearchParams(window.location.search)
+      const tokenIdRaw = Number(params.get('tokenId') ?? 0)
+      const tokenId = Number.isFinite(tokenIdRaw) ? Math.max(0, Math.floor(tokenIdRaw)) : 0
+      const selectedMinute = normalizeMinuteIndex(tokenId % TOTAL_SQUARES)
+
+      const canvas = document.getElementById('preview-canvas')
+      const meta = document.getElementById('meta')
+
+      const dimsRef = { current: resolveGridDims(window.innerWidth, window.innerHeight) }
+      const updateDims = () => {
+        dimsRef.current = resolveGridDims(window.innerWidth, window.innerHeight)
+      }
+      updateDims()
+      window.addEventListener('resize', updateDims)
+
+      // Match Piece defaults currently used in the React app.
+      const swapParams = {
+        ...DEFAULT_SWAP_PARAMS,
+        mode: 'y-wave',
+        swapBehavior: 'swap',
+        waveRippleEnabled: true,
+        chromaticNudgeSource: 'manual',
+        innerSpatialChromaticGradient: false,
+        innerSpatialChromaticChasePerMinute: 0,
+        innerAreaLuminanceMod: false,
+        innerHandProximityLightness: false
+      }
+
+      meta.textContent = `tokenId ${tokenId}  minute ${selectedMinute}`
+
+      const handle = mountSingleClock(canvas, {
+        getMinuteIndex: () => selectedMinute,
+        getSecondInMinute: () => getSecondInMinuteFromDate(new Date()),
+        getGridRow: () => Math.floor(selectedMinute / dimsRef.current.cols),
+        gridRowCount: () => dimsRef.current.rows,
+        swapParams,
+        targetFps: 60
+      })
+
+      window.addEventListener('beforeunload', () => {
+        handle.dispose()
+      })
+    </script>
+  </body>
+</html>

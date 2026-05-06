@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>On-Chain Token Single View</title>
+    <style>
+      :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; }
+      body { margin: 0; background: #0b0b0b; color: #f3f3f3; }
+      .wrap { min-height: 100vh; display: grid; grid-template-columns: 320px 1fr; }
+      .panel { padding: 16px; border-right: 1px solid #282828; background: #121212; display: grid; gap: 10px; align-content: start; }
+      h1 { margin: 0 0 8px; font-size: 1rem; }
+      label { display: grid; gap: 4px; font-size: 0.84rem; color: #cbcbcb; }
+      input, select, button { font: inherit; }
+      input, select { padding: 7px 8px; border-radius: 8px; border: 1px solid #343434; background: #191919; color: #f3f3f3; }
+      button { padding: 8px 10px; border-radius: 8px; border: 1px solid #3a3a3a; background: #1f1f1f; color: #f3f3f3; cursor: pointer; }
+      .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .check { display: flex; align-items: center; gap: 8px; font-size: 0.84rem; color: #cbcbcb; }
+      .check input { width: auto; }
+      .stage { display: grid; place-items: center; padding: 16px; }
+      .frame { width: min(88vmin, calc(100vw - 360px)); aspect-ratio: 1/1; border: 1px solid #2c2c2c; border-radius: 12px; background: #000; overflow: hidden; }
+      .frame svg { width: 100%; height: 100%; display: block; }
+      .meta { font-size: 0.78rem; color: #9d9d9d; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <aside class="panel">
+        <h1>Single Token Square View</h1>
+
+        <div class="row">
+          <label>Minute Index <input id="minute" type="number" min="0" value="517" /></label>
+          <label>Second <input id="second" type="number" min="0" max="59.999" step="0.01" value="27" /></label>
+        </div>
+
+        <label class="check"><input id="useNow" type="checkbox" checked /> Use live second</label>
+
+        <div class="row">
+          <button id="renderBtn">Render</button>
+          <button id="playBtn">Play second</button>
+        </div>
+
+        <div id="stats" class="meta"></div>
+      </aside>
+      <main class="stage"><canvas id="frame" class="frame"></canvas></main>
+    </div>
+
+    <script type="module">
+      import { initSingleSquarePage } from './src/render/onchainViewPages.js'
+      initSingleSquarePage()
+    </script>
+  </body>
+</html>

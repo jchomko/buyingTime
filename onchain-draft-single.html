@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>On-Chain Single Square Draft</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      }
+      body {
+        margin: 0;
+        background: #0b0b0b;
+        color: #f3f3f3;
+      }
+      .wrap {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 300px 1fr;
+      }
+      .panel {
+        padding: 16px;
+        border-right: 1px solid #262626;
+        background: #121212;
+        display: grid;
+        gap: 10px;
+        align-content: start;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 1rem;
+      }
+      label {
+        display: grid;
+        gap: 4px;
+        font-size: 0.84rem;
+        color: #cbcbcb;
+      }
+      input, select, button {
+        font: inherit;
+      }
+      input, select {
+        padding: 7px 8px;
+        border-radius: 8px;
+        border: 1px solid #343434;
+        background: #191919;
+        color: #f3f3f3;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      button {
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #3a3a3a;
+        background: #1f1f1f;
+        color: #f3f3f3;
+        cursor: pointer;
+      }
+      .stage {
+        display: grid;
+        place-items: center;
+        padding: 16px;
+      }
+      .frame {
+        width: min(88vmin, calc(100vw - 340px));
+        aspect-ratio: 1 / 1;
+        border: 1px solid #2c2c2c;
+        border-radius: 12px;
+        background: #000;
+        overflow: hidden;
+      }
+      .frame svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .meta {
+        font-size: 0.78rem;
+        color: #9d9d9d;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <aside class="panel">
+        <h1>Single Square Draft</h1>
+
+        <label>
+          Mode
+          <select id="mode">
+            <option value="compute">compute</option>
+            <option value="precomputed">precomputed</option>
+          </select>
+        </label>
+
+        <div class="row">
+          <label>
+            Token ID
+            <input id="tokenId" type="number" min="0" value="42" />
+          </label>
+          <label>
+            Minute Index
+            <input id="minute" type="number" min="0" value="517" />
+          </label>
+        </div>
+
+        <div class="row">
+          <label>
+            Second
+            <input id="second" type="number" min="0" max="59.999" step="0.01" value="27" />
+          </label>
+          <label>
+            Keyframes
+            <input id="keyframes" type="number" min="2" max="64" value="12" />
+          </label>
+        </div>
+
+        <label>
+          Background
+          <input id="background" type="text" value="#000000" />
+        </label>
+
+        <div class="row">
+          <button id="renderBtn">Render</button>
+          <button id="playBtn">Play second</button>
+        </div>
+
+        <div id="stats" class="meta"></div>
+        <div class="meta">Open at <code>/onchain-draft-single.html</code></div>
+      </aside>
+
+      <main class="stage">
+        <div id="frame" class="frame"></div>
+      </main>
+    </div>
+
+    <script type="module">
+      import { buildOnchainStyleSingleSquareSvg } from './src/render/onchainSvgRendererDraft.js'
+
+      const els = {
+        mode: document.getElementById('mode'),
+        tokenId: document.getElementById('tokenId'),
+        minute: document.getElementById('minute'),
+        second: document.getElementById('second'),
+        keyframes: document.getElementById('keyframes'),
+        background: document.getElementById('background'),
+        renderBtn: document.getElementById('renderBtn'),
+        playBtn: document.getElementById('playBtn'),
+        frame: document.getElementById('frame'),
+        stats: document.getElementById('stats')
+      }
+
+      let raf = 0
+      let playing = false
+
+      function n(v, fallback = 0) {
+        const x = Number(v)
+        return Number.isFinite(x) ? x : fallback
+      }
+
+      function render() {
+        const t0 = performance.now()
+        const params = {
+          mode: els.mode.value,
+          tokenId: n(els.tokenId.value, 42),
+          minuteIndex: n(els.minute.value, 0),
+          secondInMinute: n(els.second.value, 0),
+          keyframeCount: n(els.keyframes.value, 12),
+          background: els.background.value || '#000000'
+        }
+        const svg = buildOnchainStyleSingleSquareSvg(params)
+        els.frame.innerHTML = svg
+        const dt = performance.now() - t0
+        els.stats.textContent = `SVG size: ${svg.length.toLocaleString()} chars | render: ${dt.toFixed(2)}ms`
+      }
+
+      function tick() {
+        if (!playing) return
+        const sec = (n(els.second.value, 0) + 0.1) % 60
+        els.second.value = sec.toFixed(2)
+        render()
+        raf = requestAnimationFrame(tick)
+      }
+
+      function setPlaying(next) {
+        playing = next
+        els.playBtn.textContent = playing ? 'Pause' : 'Play second'
+        cancelAnimationFrame(raf)
+        if (playing) raf = requestAnimationFrame(tick)
+      }
+
+      for (const id of ['mode', 'tokenId', 'minute', 'second', 'keyframes', 'background']) {
+        els[id].addEventListener('change', render)
+      }
+      els.renderBtn.addEventListener('click', render)
+      els.playBtn.addEventListener('click', () => setPlaying(!playing))
+
+      render()
+    </script>
+  </body>
+</html>
