@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import {
+  useChainId,
+  useReadContract,
+  useSwitchChain,
+  useWaitForTransactionReceipt,
+  useWriteContract
+} from 'wagmi'
 import { ViewerBrand } from '../components/ViewerBrand.jsx'
-import { readTokenOwner } from '../lib/readPurchasedTokenIds.js'
+import { readTokenOwnerDisplay } from '../lib/readPurchasedTokenIds.js'
 import { useWallet } from '../context/useWallet.js'
 import { getMinuteIndexFromDate } from '../render/clockHullRenderer.js'
 import { CanvasView } from '../viewer/CanvasView.jsx'
@@ -23,6 +30,22 @@ function useNow(intervalMs = 1000) {
 
 const PIECE_MINUTE_KEY = 'pieceSelectedMinute'
 const INFO_THEME_KEY = 'pieceInfoTheme'
+const BUYING_TIME_WRITE_ABI = [
+  {
+    type: 'function',
+    name: 'pricePerPiece',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }]
+  },
+  {
+    type: 'function',
+    name: 'mintInvite',
+    stateMutability: 'payable',
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    outputs: [{ name: '', type: 'uint256' }]
+  }
+]
 
 function rgbToCss({ r, g, b }) {
   return `rgb(${r}, ${g}, ${b})`
@@ -80,6 +103,11 @@ function readStoredPieceMinute() {
 }
 
 export default function PiecePage() {
+  const expectedChainId = useMemo(() => {
+    const raw = (import.meta.env.VITE_CHAIN_ID || '31337').trim()
+    const id = Number.parseInt(raw, 10)
+    return Number.isFinite(id) ? id : 31337
+  }, [])
   const navigate = useNavigate()
   const [selectedIndex, setSelectedIndex] = useState(readStoredPieceMinute)
   const now = useNow(1000)
@@ -101,6 +129,8 @@ export default function PiecePage() {
 
   const ownerByTokenRef = useRef(new Map())
   const [workOwnerLine, setWorkOwnerLine] = useState('')
+  const [mintTxHash, setMintTxHash] = useState(null)
+  const [mintError, setMintError] = useState('')
   const {
     walletAccount,
     walletBusy,
@@ -121,6 +151,50 @@ export default function PiecePage() {
       /* ignore */
     }
   }, [selectedIndex])
+
+  const resolveOwnerDisplay = useCallback(async (idx) => {
+    if (!rpcUrl || !contractAddress) return ''
+    const ensRpcUrl = (import.meta.env.VITE_ENS_RPC_URL || '').trim() || undefined
+    return readTokenOwnerDisplay({
+      rpcUrl,
+      contractAddress,
+      tokenId: idx,
+      ensRpcUrl
+    })
+  }, [rpcUrl, contractAddress])
+
+  const { data: pricePerPiece } = useReadContract({
+    address: contractAddress || undefined,
+    abi: BUYING_TIME_WRITE_ABI,
+    functionName: 'pricePerPiece',
+    chainId: expectedChainId,
+    query: {
+      enabled: !!contractAddress
+    }
+  })
+
+  const { writeContractAsync, isPending: isMintSubmitting } = useWriteContract()
+  const chainId = useChainId()
+  const { switchChainAsync } = useSwitchChain()
+  const { isLoading: isMintConfirming, isSuccess: isMintConfirmed } = useWaitForTransactionReceipt({
+    hash: mintTxHash
+  })
+
+  useEffect(() => {
+    if (!isMintConfirmed) return
+    const idx = normalizeMinuteIndex(displayMinuteIndex)
+    refreshSold()
+      .then(() => resolveOwnerDisplay(idx))
+      .then((ownerLabel) => {
+        ownerByTokenRef.current.set(idx, ownerLabel)
+        setWorkOwnerLine(formatOwnerDisplay(ownerLabel))
+        setMintError('')
+      })
+      .catch((err) => {
+        setMintError(err?.shortMessage || err?.message || String(err))
+      })
+      .finally(() => setMintTxHash(null))
+  }, [isMintConfirmed, displayMinuteIndex, refreshSold, resolveOwnerDisplay])
 
   useEffect(() => {
     const idx = normalizeMinuteIndex(displayMinuteIndex)
@@ -144,10 +218,9 @@ export default function PiecePage() {
       }
     }
     apply(() => setWorkOwnerLine('…'))
-    readTokenOwner({ rpcUrl, contractAddress, tokenId: idx })
-      .then((addr) => {
+    resolveOwnerDisplay(idx)
+      .then((value) => {
         if (cancelled) return
-        const value = addr ? addr : 'UNMINTED'
         ownerByTokenRef.current.set(idx, value)
         setWorkOwnerLine(formatOwnerDisplay(value))
       })
@@ -158,7 +231,7 @@ export default function PiecePage() {
     return () => {
       cancelled = true
     }
-  }, [displayMinuteIndex, rpcUrl, contractAddress])
+  }, [displayMinuteIndex, rpcUrl, contractAddress, resolveOwnerDisplay])
 
   useEffect(() => {
     const onKey = (e) => {
@@ -192,13 +265,48 @@ export default function PiecePage() {
     navigate('/gallery')
   }, [navigate])
 
+  const handleConnectClick = useCallback(async () => {
+    setMintError('')
+    await connectWallet()
+  }, [connectWallet])
+
   const handleMintClick = useCallback(async () => {
+    setMintError('')
     if (!walletAccount) {
-      await connectWallet()
+      setMintError('Connect wallet first.')
       return
     }
-    // Mint flow will be wired here once contract write is implemented.
-  }, [walletAccount, connectWallet])
+    if (!contractAddress) {
+      setMintError('Set VITE_CONTRACT_ADDRESS before minting.')
+      return
+    }
+    try {
+      if (chainId !== expectedChainId) {
+        await switchChainAsync({ chainId: expectedChainId })
+      }
+      const tokenId = BigInt(normalizeMinuteIndex(displayMinuteIndex))
+      const txHash = await writeContractAsync({
+        address: contractAddress,
+        abi: BUYING_TIME_WRITE_ABI,
+        functionName: 'mintInvite',
+        args: [tokenId],
+        value: pricePerPiece ?? 0n,
+        chainId: expectedChainId
+      })
+      setMintTxHash(txHash)
+    } catch (err) {
+      setMintError(err?.shortMessage || err?.message || String(err))
+    }
+  }, [
+    walletAccount,
+    contractAddress,
+    chainId,
+    expectedChainId,
+    switchChainAsync,
+    writeContractAsync,
+    pricePerPiece,
+    displayMinuteIndex
+  ])
 
   const ownerDisplay =
     !rpcUrl || !contractAddress
@@ -206,6 +314,17 @@ export default function PiecePage() {
       : workOwnerLine === '…'
         ? '…'
         : workOwnerLine || ''
+
+  const isMinted =
+    Boolean(ownerDisplay) &&
+    ownerDisplay !== '…' &&
+    ownerDisplay !== 'Not minted'
+
+  const mintSlotOwnerTitle = (() => {
+    const idx = normalizeMinuteIndex(displayMinuteIndex)
+    const raw = ownerByTokenRef.current.get(idx)
+    return typeof raw === 'string' && raw !== 'Not minted' ? raw : ''
+  })()
 
   const goNow = () => {
     setSelectedIndex(null)
@@ -309,9 +428,22 @@ export default function PiecePage() {
                     Disconnect
                   </button>
                 </>
-              ) : null}
+              ) : (
+                <button
+                  type="button"
+                  className="toggle-button"
+                  disabled={walletBusy}
+                  onClick={() => {
+                    setMintError('')
+                    connectWallet()
+                  }}
+                >
+                  Connect
+                </button>
+              )}
             </div>
             {walletError && <div className="wallet-banner">{walletError}</div>}
+            {mintError && <div className="wallet-banner">{mintError}</div>}
           </div>
         )}
 
@@ -371,18 +503,40 @@ export default function PiecePage() {
                 >
                   {formatWorkTime(displayMinuteIndex)}
                 </p>
-                <button
-                  type="button"
-                  className="work-meta-mint-button mono"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleMintClick()
-                  }}
-                  disabled={walletBusy}
-                  title={!walletAccount ? 'Connect wallet to mint' : 'Mint this minute'}
-                >
-                  {walletBusy ? '...' : 'Mint'}
-                </button>
+                {!walletAccount ? (
+                  <button
+                    type="button"
+                    className="work-meta-mint-button mono"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleConnectClick()
+                    }}
+                    disabled={walletBusy}
+                    title="Open wallet connect modal"
+                  >
+                    {walletBusy ? '…' : 'Connect'}
+                  </button>
+                ) : isMinted ? (
+                  <span
+                    className="work-meta-mint-button mono work-meta-owner-inline"
+                    title={mintSlotOwnerTitle || undefined}
+                  >
+                    {ownerDisplay}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    className="work-meta-mint-button mono"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleMintClick()
+                    }}
+                    disabled={walletBusy || isMintSubmitting || isMintConfirming}
+                    title="Mint this minute"
+                  >
+                    {walletBusy || isMintSubmitting || isMintConfirming ? '…' : 'Mint'}
+                  </button>
+                )}
                 <button
                   type="button"
                   className="work-meta-step-button mono"
@@ -396,12 +550,6 @@ export default function PiecePage() {
                   →
                 </button>
               </div>
-              {ownerDisplay ? (
-                <p className="work-meta-owner mono">
-                  <span className="work-meta-label">Owner</span>{' '}
-                  <span className="work-meta-owner-value">{ownerDisplay}</span>
-                </p>
-              ) : null}
             </div>
           </div>
         </div>

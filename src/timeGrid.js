@@ -35,8 +35,9 @@ export function formatWorkTime(minuteIndex) {
 
 export function formatOwnerDisplay(addressOrUnminted) {
   if (addressOrUnminted == null || addressOrUnminted === '') return ''
-  if (addressOrUnminted === 'UNMINTED') return 'Not minted'
+  if (addressOrUnminted === 'UNMINTED' || addressOrUnminted === 'Not minted') return 'Not minted'
   const a = String(addressOrUnminted)
+  if (a.toLowerCase().endsWith('.eth')) return a
   if (a.length <= 14) return a
   return `${a.slice(0, 6)}…${a.slice(-4)}`
 }

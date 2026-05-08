@@ -199,7 +199,7 @@ button.viewer-title.viewer-title--link:hover:not(:disabled) {
 
 button.viewer-title.viewer-title--link:disabled {
   opacity: 0.55;
-  cursor: wait;
+  cursor: default;
 }
 
 .wallet-pill {
@@ -317,7 +317,7 @@ a.toggle-button.toolbar-page-link {
 
 .work-meta-time {
   /* Same vmin spine as `.viewer-title` / `.viewer-title--link`, scaled up for the clock readout. */
-  font-size: clamp(1.05rem, 2.8vmin, 1.85rem);
+  font-size: clamp(1.05rem, 2.8vmin, 1.65rem);
   font-weight: 600;
   letter-spacing: 0.06em;
 }
@@ -326,6 +326,13 @@ a.toggle-button.toolbar-page-link {
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
+  flex-wrap: nowrap;
+}
+
+.work-meta-time-row .work-meta-mint-button,
+.work-meta-time-row .work-meta-owner-inline {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .work-meta-step-button {
@@ -382,7 +389,16 @@ a.toggle-button.toolbar-page-link {
 
 .work-meta-mint-button:disabled {
   opacity: 0.5;
-  cursor: wait;
+  cursor: default;
+}
+
+.work-meta-owner-inline {
+  cursor: default;
+  user-select: text;
+}
+
+.work-meta-owner-inline:hover {
+  opacity: 1;
 }
 
 .work-meta-time--clickable {

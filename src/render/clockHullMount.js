@@ -47,21 +47,22 @@ function drawSoldMinuteMarkers(ctx, canvasW, canvasH, cols, rows, soldSet) {
   const cellW = canvasW / cols
   const cellH = canvasH / rows
   const N = cols * rows
-  const dotR = Math.max(2, Math.min(cellW, cellH) * 0.11)
+  const dotR = Math.max(1.25, Math.min(cellW, cellH) * 0.055)
   ctx.save()
-  ctx.fillStyle = '#e02020'
-  ctx.strokeStyle = 'rgba(0,0,0,0.45)'
-  ctx.lineWidth = Math.max(0.5, dotR * 0.18)
+  ctx.fillStyle = 'rgba(236, 145, 145, 0.68)'
+  // ctx.strokeStyle = 'rgba(24, 24, 24, 0.45)'
+  // ctx.lineWidth = Math.max(0.5, dotR * 0.10)
   for (let i = 0; i < N; i++) {
     if (!soldSet.has(i)) continue
     const row = (i / cols) | 0
     const col = i % cols
-    const cx = col * cellW + cellW * 0.86
-    const cy = row * cellH + cellH * 0.14
+    const cx = col * cellW + cellW * 0.91
+    const cy = row * cellH + cellH * 0.91
     ctx.beginPath()
     ctx.arc(cx, cy, dotR, 0, Math.PI * 2)
     ctx.fill()
-    ctx.stroke()
+    
+    // ctx.stroke()
   }
   ctx.restore()
 }

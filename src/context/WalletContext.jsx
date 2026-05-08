@@ -41,14 +41,12 @@ export function WalletProvider({ children }) {
   }, [rpcUrl, contractAddress])
 
   const getSoldMinuteIndices = useCallback(() => {
-    if (!walletAccount) return null
     return soldMinuteIndicesRef.current
-  }, [walletAccount])
+  }, [])
 
   const disconnectWallet = useCallback(() => {
     disconnect()
     setWalletError(null)
-    soldMinuteIndicesRef.current = new Set()
   }, [disconnect])
 
   const connectWallet = useCallback(async () => {
@@ -62,7 +60,6 @@ export function WalletProvider({ children }) {
   }, [walletAccount, openConnectModal])
 
   const refreshSold = useCallback(async () => {
-    if (!walletAccount) return
     setWalletError(null)
     setWalletBusy(true)
     try {
@@ -72,22 +69,18 @@ export function WalletProvider({ children }) {
     } finally {
       setWalletBusy(false)
     }
-  }, [walletAccount, fetchSoldIntoRef])
+  }, [fetchSoldIntoRef])
 
   useEffect(() => {
-    if (!walletAccount) {
-      soldMinuteIndicesRef.current = new Set()
-      return
-    }
     if (rpcUrl && contractAddress) {
       setWalletBusy(true)
       fetchSoldIntoRef()
         .catch((e) => setWalletError(e?.message || String(e)))
         .finally(() => setWalletBusy(false))
     } else {
-      setWalletError('Connected — set VITE_RPC_URL and VITE_CONTRACT_ADDRESS to load sold pieces.')
+      setWalletError('Set VITE_RPC_URL and VITE_CONTRACT_ADDRESS to load sold pieces.')
     }
-  }, [walletAccount, rpcUrl, contractAddress, fetchSoldIntoRef])
+  }, [rpcUrl, contractAddress, fetchSoldIntoRef])
 
   const isWagmiBusy = isConnecting || status === 'reconnecting'
 

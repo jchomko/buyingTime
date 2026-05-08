@@ -84,40 +84,61 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
     // { t: 0.64, color: { r: 81, g: 34, b: 22 } },
     // { t: 0.56, color: { r: 0.616*125, g: 0.400*125, b: 0.365*125 } },
   ],
-  //white to black
-  outerChromaticNudgesToInner: [
-    { t: 0.0, dr: +0, dg: +3,  db: +5, width: 0.3, strength: 1.0 },
-    { t: 0.1, dr: +0, dg: +8,  db: +6, width: 0.3, strength: 1.0 },
-    { t: 0.3, dr: +8, dg: +3, db: +0, width: 0.3, strength: 1.0 },
-    { t: 0.6, dr: +6, dg: +1, db: +0, width: 0.3, strength: 1.0 }],
-
 
   //black to white
-  outerChromaticNudgesToOuter: [],
+  outerChromaticNudgesToOuter: [
+    // { t: 0.65, dr: +0, dg: +3,  db: +12, width: 0.3, strength: 1.0 },
+    // { t: 0.70, dr: +0, dg: +18,  db: +6, width: 0.3, strength: 1.0 },
+    // { t: 0.75, dr: +8, dg: +10, db: +0, width: 0.3, strength: 1.0 },
+    // { t: 0.55, dr: +0, dg: +1, db: +0, width: 0.3, strength: 1.0 }
+    { t: 0.50, dr: +5, dg: +0,  db: +0, width: 0.15, strength: 1.0 },
+    // { t: 0.54, dr: +3, dg: +8,  db: +0, width: 0.05, strength: 1.0 },
+    // { t: 0.52, dr: +1, dg: +4, db: +4, width: 0.05, strength: 1.0 },
+    // { t: 0.50, dr: +0, dg: +3, db: +6, width: 0.05, strength: 1.0 },
+   
+  ],
+  
+    //outer black to white
+   outerChromaticNudgesToInner: [
+  //  { t: 0.55, dr: +10, dg: +0, db: +0, width: 0.3, strength: 1.0 }
+   ],
 
-  //white to black
+
+  //inner white to black
   innerChromaticNudgesToOuter: [ 
-    { t: 0.8, dr: +0, dg: +4,  db: +12, width: 0.3, strength: 1.0 },
-    { t: 0.6, dr: +0, dg: +8,  db: +8, width: 0.3, strength: 1.0 },
-    { t: 0.3, dr: +12, dg: +10, db: +0, width: 0.3, strength: 1.0 },
-    { t: 0.1, dr: +8, dg: +1, db: +0, width: 0.3, strength: 1.0 }],
-    // { t: 0.35, dr: +0, dg: +5,  db: +32, width: 0.1, strength: 1.0 },
-    // { t: 0.34, dr: +0, dg: +28,  db: +18, width: 0.1, strength: 1.0 },
-    // { t: 0.33, dr: +42, dg: +30, db: +0, width: 0.1, strength: 1.0 },
-    // { t: 0.32, dr: +34, dg: +1, db: +0, width: 0.1, strength: 1.0 }],
+    // { t: 0.8, dr: +0, dg: +4,  db: +12, width: 0.3, strength: 1.0 },
+    // { t: 0.6, dr: +0, dg: +8,  db: +8, width: 0.3, strength: 1.0 },
+    // { t: 0.3, dr: +12, dg: +10, db: +0, width: 0.3, strength: 1.0 },
+    // { t: 0.1, dr: +8, dg: +1, db: +0, width: 0.3, strength: 1.0 }],
 
-    //black to white  
+    { t: 0.40, dr: +8, dg: +1,  db: +0, width: 0.15, strength: 1.0 },
+    { t: 0.42, dr: +3, dg: +8,  db: +0, width: 0.15, strength: 1.0 },
+    { t: 0.44, dr: +1, dg: +4, db: +4, width: 0.15, strength: 1.0 },
+    { t: 0.46, dr: +0, dg: +3, db: +6, width: 0.15, strength: 1.0 },
+    // { t: 0.50, dr: +0, dg: +3, db: +8, width: 0.05, strength: 1.0 }
+  ],
+
+    // { t: 0.45, dr: +0, dg: +5,  db: +32, width: 0.1, strength: 1.0 },
+    // { t: 0.50, dr: +0, dg: +28,  db: +18, width: 0.1, strength: 1.0 },
+    // { t: 0.55, dr: +42, dg: +30, db: +0, width: 0.1, strength: 1.0 },
+    // { t: 0.60, dr: +34, dg: +1, db: +0, width: 0.1, strength: 1.0 }],
+
+    //inner black to white 
     innerChromaticNudgesToInner: [
-      { t: 0.0, dr: +0, dg: +3,  db: +2, width: 0.3, strength: 1.0 },
-      { t: 0.1, dr: +0, dg: +8,  db: +6, width: 0.3, strength: 1.0 },
-      { t: 0.3, dr: +8, dg: +3, db: +0, width: 0.3, strength: 1.0 },
-      { t: 0.6, dr: +6, dg: +1, db: +0, width: 0.3, strength: 1.0 }],
-      // { t: 0.0, dr: +0, dg: +13,  db: +26, width: 0.2, strength: 1.0 },
-      // { t: 0.1, dr: +0, dg: +10,  db: +20, width: 0.2, strength: 1.0 },
-      // { t: 0.3, dr: +20, dg: +15, db: +0, width: 0.2, strength: 1.0 },
-      // { t: 0.6, dr: +15, dg: +5, db: +0, width: 0.2, strength: 1.0 }],
+      { t: 0.50, dr: +0, dg: +0,  db: +5, width: 0.15, strength: 1.0 },
+   
+      // { t: 0.0, dr: +0, dg: +3,  db: +2, width: 0.3, strength: 1.0 },
+      // { t: 0.1, dr: +0, dg: +8,  db: +6, width: 0.3, strength: 1.0 },
+      // { t: 0.3, dr: +8, dg: +3, db: +0, width: 0.3, strength: 1.0 },
+      // { t: 0.6, dr: +6, dg: +1, db: +0, width: 0.3, strength: 1.0 },
+      // { t: 0.40, dr: +0, dg: +13,  db: +14, width: 0.1, strength: 1.0 },
+      // { t: 0.45, dr: +0, dg: +10,  db: +20, width: 0.1, strength: 1.0 },
+      // { t: 0.55, dr: +13, dg: +15, db: +0, width: 0.1, strength: 1.0 },
+      // { t: 0.60, dr: +6, dg: +5, db: +0, width: 0.1, strength: 1.0 }
+    ],
+
   swapLead: 1.4,
-  swapLag: 10.0,
+  swapLag: 8.0,
   // How the two shapes animate during each swap event:
   //   'swap'       — classic. Outer and inner exchange colors: outer ramps
   //                  outerColor → innerColor and back, inner ramps
@@ -153,6 +174,19 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
   // valued params (waveTopSecond, waveBottomSecond) are interpreted
   // within [0, 60/swapCyclesPerMinute).
   swapCyclesPerMinute: 3,
+  // Optional cycle-specific y-wave overrides. Cycle index is derived from
+  // secondInMinute and repeats when this list is shorter than
+  // swapCyclesPerMinute. Any omitted field falls back to the global wave*
+  // setting below. Useful for per-cycle direction/style changes.
+  // Default example:
+  //   1) top-down ripple
+  //   2) bottom-up ripple
+  //   3) uniform (no ripple)
+  yWaveCycleParams: [
+    { waveTopSecond: 10.0, waveBottomSecond: 18.0, waveRippleEnabled: true },
+    { waveTopSecond: 10.0, waveBottomSecond: 18.0, waveRippleEnabled: true },
+    { waveTopSecond: 10.0, waveBottomSecond: 18.0, waveRippleEnabled: true  }
+  ],
   mode: 'y-wave',
   // When true (default), each cell's swap phase is staggered by canonical
   // row/column (y-wave "ripple"). When false, every cell shares the same
@@ -224,6 +258,12 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
   chromaticGradientPeakWidth: 0.4,
   // 0 = no pull toward the gradient; 1 = full lerp to gradient at peak center.
   chromaticGradientStrength: 0.82,
+  // Global per-token additive RGB nudge, linearly interpolated from token 0
+  // to token `chromaticGlobalNudgeMaxIndex` (default 1440). Applied after
+  // manual/gradient/combo chroma to give each piece a subtle hue offset.
+  chromaticGlobalNudgeStart: { dr: 0, dg: 0, db: 0 },
+  chromaticGlobalNudgeEnd: { dr: 0, dg: 0, db: 0 },
+  chromaticGlobalNudgeMaxIndex: 1440,
   // Only y-wave parameters are used.
 })
 
@@ -242,6 +282,8 @@ const BASE_RADIUS = 16
 const FRAME_HALF = 24
 const CYCLE_SECONDS = 60
 const CAP_STEPS = 4
+const DEBUG_LOG_SWAP_CYCLE = true
+let _lastLoggedSwapCycle = null
 
 function clamp(v, a, b) { return v < a ? a : (v > b ? b : v) }
 function lerp(a, b, t) { return a + (b - a) * t }
@@ -268,6 +310,11 @@ function fract01(x) {
 // `gridRow`/`gridRowCount` are accepted for signature compatibility but
 // deliberately ignored — the canonical row comes from minuteIndex.
 export function getYWaveSwapSecond(gridRow, gridRowCount, minuteIndex, swap) {
+  const p = resolveCycleWaveParams(0, swap)
+  return getYWaveSwapSecondWithParams(minuteIndex, swap, p)
+}
+
+function getYWaveSwapSecondWithParams(minuteIndex, swap, p) {
   const canonCols = swap.waveCanonicalCols > 0 ? swap.waveCanonicalCols | 0 : 24
   const canonRows = swap.waveCanonicalRows > 0 ? swap.waveCanonicalRows | 0 : 60
   const total = canonCols * canonRows
@@ -277,9 +324,9 @@ export function getYWaveSwapSecond(gridRow, gridRowCount, minuteIndex, swap) {
 
   const rowSpan = Math.max(1, canonRows - 1)
   const yNorm = clamp(row / rowSpan, 0, 1)
-  const shoal = swap.waveShoalExponent > 0 ? swap.waveShoalExponent : 1
-  const T = swap.waveTopSecond
-  const B = swap.waveBottomSecond
+  const shoal = p.waveShoalExponent > 0 ? p.waveShoalExponent : 1
+  const T = p.waveTopSecond
+  const B = p.waveBottomSecond
 
   let base
   if (shoal === 1) {
@@ -294,12 +341,12 @@ export function getYWaveSwapSecond(gridRow, gridRowCount, minuteIndex, swap) {
     base = topIsDestination ? B + shaped * (T - B) : T + shaped * (B - T)
   }
 
-  const advance = swap.waveEdgeAdvance > 0 ? swap.waveEdgeAdvance : 0
+  const advance = p.waveEdgeAdvance > 0 ? p.waveEdgeAdvance : 0
   if (advance > 0 && canonCols > 1) {
     const cCol = (canonCols - 1) * 0.5
     // d: 0 at canonical-row center → 1 at canonical-row edges.
     const d = cCol > 0 ? Math.abs(col - cCol) / cCol : 0
-    const falloff = swap.waveEdgeFalloff > 0 ? swap.waveEdgeFalloff : 1
+    const falloff = p.waveEdgeFalloff > 0 ? p.waveEdgeFalloff : 1
     const shaped = falloff === 1 ? d : Math.pow(d, falloff)
     base -= advance * shaped
   }
@@ -307,16 +354,49 @@ export function getYWaveSwapSecond(gridRow, gridRowCount, minuteIndex, swap) {
   return base
 }
 
+function getSwapCycleIndex(secondInMinute, swap) {
+  const cpm = swap && swap.swapCyclesPerMinute > 0 ? swap.swapCyclesPerMinute : 1
+  const cycle = CYCLE_SECONDS / cpm
+  const sec = ((secondInMinute % CYCLE_SECONDS) + CYCLE_SECONDS) % CYCLE_SECONDS
+  return Math.floor(sec / cycle) % cpm
+}
+
+function resolveCycleWaveParams(secondInMinute, swap) {
+  const cycleParams = swap && Array.isArray(swap.yWaveCycleParams) ? swap.yWaveCycleParams : null
+  const idx = getSwapCycleIndex(secondInMinute, swap)
+  if (DEBUG_LOG_SWAP_CYCLE && _lastLoggedSwapCycle !== idx) {
+    const cpm = swap && swap.swapCyclesPerMinute > 0 ? swap.swapCyclesPerMinute : 1
+    console.log('[clockHullRenderer] active swap cycle', {
+      cycleIndex: idx,
+      cycleHuman: idx + 1,
+      swapCyclesPerMinute: cpm,
+      secondInMinute
+    })
+    _lastLoggedSwapCycle = idx
+  }
+  const per = cycleParams && cycleParams.length > 0 ? cycleParams[idx % cycleParams.length] : null
+  return {
+    waveTopSecond: per && per.waveTopSecond != null ? per.waveTopSecond : swap.waveTopSecond,
+    waveBottomSecond: per && per.waveBottomSecond != null ? per.waveBottomSecond : swap.waveBottomSecond,
+    waveShoalExponent: per && per.waveShoalExponent != null ? per.waveShoalExponent : swap.waveShoalExponent,
+    waveEdgeAdvance: per && per.waveEdgeAdvance != null ? per.waveEdgeAdvance : swap.waveEdgeAdvance,
+    waveEdgeFalloff: per && per.waveEdgeFalloff != null ? per.waveEdgeFalloff : swap.waveEdgeFalloff,
+    waveRippleEnabled: per && per.waveRippleEnabled != null ? per.waveRippleEnabled : swap.waveRippleEnabled,
+    waveUniformCrossSecond: per && per.waveUniformCrossSecond != null ? per.waveUniformCrossSecond : swap.waveUniformCrossSecond
+  }
+}
+
 // Y-wave staggered timing per cell, unless `swap.waveRippleEnabled === false`.
-export function getSwapCrossSecond(minuteIndex, gridRow, gridRowCount, swap) {
-  if (swap && swap.waveRippleEnabled === false) {
-    const u = swap.waveUniformCrossSecond
+export function getSwapCrossSecond(minuteIndex, gridRow, gridRowCount, swap, secondInMinute = 0) {
+  const p = resolveCycleWaveParams(secondInMinute, swap)
+  if (p.waveRippleEnabled === false) {
+    const u = p.waveUniformCrossSecond
     if (u != null && Number.isFinite(u)) return u
-    const T = swap.waveTopSecond != null ? swap.waveTopSecond : 10
-    const B = swap.waveBottomSecond != null ? swap.waveBottomSecond : 18
+    const T = p.waveTopSecond != null ? p.waveTopSecond : 10
+    const B = p.waveBottomSecond != null ? p.waveBottomSecond : 18
     return (T + B) * 0.5
   }
-  return getYWaveSwapSecond(gridRow, gridRowCount, minuteIndex, swap)
+  return getYWaveSwapSecondWithParams(minuteIndex, swap, p)
 }
 
 // Shared scratch for getCrossWindowPhase. Returned by reference; callers must
@@ -489,6 +569,35 @@ function applyChromaticNudges(base, nudges, p) {
   return _nudgeOut
 }
 
+const _tokenNudgeOut = { r: 0, g: 0, b: 0 }
+function applyTokenGlobalNudge(base, minuteIndex, swap) {
+  const s = swap && swap.chromaticGlobalNudgeStart
+  const e = swap && swap.chromaticGlobalNudgeEnd
+  if (!s && !e) {
+    _tokenNudgeOut.r = base.r
+    _tokenNudgeOut.g = base.g
+    _tokenNudgeOut.b = base.b
+    return _tokenNudgeOut
+  }
+  const maxIdx = swap && swap.chromaticGlobalNudgeMaxIndex > 0
+    ? swap.chromaticGlobalNudgeMaxIndex
+    : 1440
+  const t = clamp((minuteIndex | 0) / maxIdx, 0, 1)
+  const sdr = s && s.dr != null ? s.dr : (s && s.r != null ? s.r : 0)
+  const sdg = s && s.dg != null ? s.dg : (s && s.g != null ? s.g : 0)
+  const sdb = s && s.db != null ? s.db : (s && s.b != null ? s.b : 0)
+  const edr = e && e.dr != null ? e.dr : (e && e.r != null ? e.r : 0)
+  const edg = e && e.dg != null ? e.dg : (e && e.g != null ? e.g : 0)
+  const edb = e && e.db != null ? e.db : (e && e.b != null ? e.b : 0)
+  const dr = lerp(sdr, edr, t)
+  const dg = lerp(sdg, edg, t)
+  const db = lerp(sdb, edb, t)
+  _tokenNudgeOut.r = clamp(base.r + dr, 0, 255)
+  _tokenNudgeOut.g = clamp(base.g + dg, 0, 255)
+  _tokenNudgeOut.b = clamp(base.b + db, 0, 255)
+  return _tokenNudgeOut
+}
+
 function rgbFromStop(s) {
   if (!s) return { r: 0, g: 0, b: 0 }
   return { r: s.r | 0, g: s.g | 0, b: s.b | 0 }
@@ -587,10 +696,10 @@ function applyChromaticPost(base, minuteIndex, swap, localP, manualNudges, chrom
       useGradient = false
     }
   }
-  if (useGradient) {
-    return applyGradientChromaticPeak(base, minuteIndex, swap, localP)
-  }
-  return applyChromaticNudges(base, manualNudges, localP)
+  const chroma = useGradient
+    ? applyGradientChromaticPeak(base, minuteIndex, swap, localP)
+    : applyChromaticNudges(base, manualNudges, localP)
+  return applyTokenGlobalNudge(chroma, minuteIndex, swap)
 }
 
 // Returns { outerR,outerG,outerB, innerR,innerG,innerB } as integers 0..255.
@@ -630,7 +739,7 @@ export function getHandShadeFactor(secondInMinute, minuteIndex, swap) {
 // Resolves waypoint lists, chroma lists, and local progress for both shapes.
 // Used by computeSwapColors and inner spatial-gradient fill.
 function resolveSwapColorBranches(secondInMinute, minuteIndex, gridRow, gridRowCount, swap) {
-  const crossSecond = getSwapCrossSecond(minuteIndex, gridRow, gridRowCount, swap)
+  const crossSecond = getSwapCrossSecond(minuteIndex, gridRow, gridRowCount, swap, secondInMinute)
   const cycle = resolveSwapCycleSeconds(swap)
   const phase = getCrossWindowPhase(secondInMinute, crossSecond, swap.swapLead, swap.swapLag, cycle)
   const t = phase.t

@@ -78,7 +78,7 @@ export default function InfoPage() {
               <p>
               Buying Time continues a series of works that explore market valuation, collective production and minimal abstraction. My aim was to create a piece that had both an individual view, as well as a collective view - one element contributing to become part of a larger composition. 
 
-The clock hands are extended on both sides of the central rotation point, and wrapped in a hull. Some legibility remains - the longest sides are the indicator sides. 
+            The clock hands are extended on both sides of the central rotation point, and wrapped in a hull. Some legibility remains - the longest sides are the indicator sides. 
 
               </p>
             </Col>

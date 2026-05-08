@@ -75,6 +75,74 @@ export default function GalleryPage() {
   return (
     <main className="site-shell">
       <section className="hero-section">
+      {!chromeHidden && (
+          <div className="hero-toolbar">
+            <div className="toolbar-actions">
+              
+              <label className="fps-toggle">
+                <input
+                  type="checkbox"
+                  checked={showFps}
+                  onChange={(e) => setShowFps(e.target.checked)}
+                />
+                <span>FPS</span>
+              </label>
+              <label className="fps-toggle">
+                <span>Fade</span>
+                <select
+                  className="toggle-select"
+                  value={fadeMode}
+                  onChange={(e) => setFadeMode(e.target.value)}
+                >
+                  <option value="swap">Swap</option>
+                  <option value="inner-fade">Inner fade</option>
+                </select>
+              </label>
+              <label className="fps-toggle" title={chromaticNudgeSource === 'lab' ? 'Lab uses a uniform wave (no Y ripple).' : undefined}>
+                <input
+                  type="checkbox"
+                  checked={waveRippleEnabled}
+                  disabled={chromaticNudgeSource === 'lab'}
+                  onChange={(e) => setWaveRippleEnabled(e.target.checked)}
+                />
+                <span>Ripple</span>
+              </label>
+              <label className="fps-toggle">
+                <span>Chroma</span>
+                <select
+                  className="toggle-select"
+                  value={chromaticNudgeSource}
+                  onChange={(e) => setChromaticNudgeSource(e.target.value)}
+                >
+                  <option value="manual">Manual nudges</option>
+                  <option value="gradient">Gradient peak</option>
+                  <option value="combo">Combo (inner split)</option>
+                  <option value="lab">Lab (spatial + hand proximity)</option>
+                </select>
+              </label>
+             
+              {walletAccount ? (
+                <>
+                  <span className="wallet-pill mono" title={walletAccount}>
+                    {walletAccount.slice(0, 6)}…{walletAccount.slice(-4)}
+                  </span>
+                  <button
+                    type="button"
+                    className="toggle-button"
+                    disabled={walletBusy || !rpcUrl || !contractAddress}
+                    onClick={refreshSold}
+                  >
+                    Refresh sold
+                  </button>
+                  <button type="button" className="toggle-button" onClick={disconnectWallet}>
+                    Disconnect
+                  </button>
+                </>
+              ) : null}
+            </div>
+            {walletError && <div className="wallet-banner">{walletError}</div>}
+          </div>
+        )}
         <div className="viewer-frame">
           {/* <ViewerBrand
             chromeHidden={chromeHidden}
