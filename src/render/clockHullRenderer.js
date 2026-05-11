@@ -27,31 +27,17 @@ export const DEFAULT_CLOCK_HULL_PARAMS = Object.freeze({
 
 // `mode` is kept for compatibility but y-wave is the only supported schedule.
 // Cross-second is derived from canonical row (plus optional edge advance).
-// Four independent waypoint lists, one per (shape, destination) pair. Each
-// stop is { t, color:{r,g,b} } with t strictly between 0 and 1 and the array
-// sorted by t ascending. `t` is the shape's LOCAL progress along its own
-// transition: 0 = just left its starting color, 1 = fully arrived at its
-// destination.
-//   outerWaypointsToInner — outer fill on its way to innerColor (e.g. black
-//                           → white) during the ramp-up half of the cycle.
-//   outerWaypointsToOuter — outer fill on its way back to outerColor
-//                           (white → black) during the ramp-down half.
-//   innerWaypointsToOuter — inner hull on its way to outerColor (white →
-//                           black). Runs simultaneously with the outer's
-//                           ramp-up.
-//   innerWaypointsToInner — inner hull on its way to innerColor (black →
-//                           white). Runs simultaneously with the outer's
-//                           ramp-down.
-// Leave any list empty to restore a straight lerp for that shape+direction.
-// Optional chromatic "nudge" lists apply additive RGB offsets on top of the
-// base transition without replacing it with a full waypoint color. Each nudge:
+// Base colors linearly interpolate between outerColor and innerColor per shape
+// and swap phase. Optional chromatic "nudge" lists apply additive RGB offsets
+// on top of that base lerp. Each nudge:
 //   { t, dr, dg, db, width?, strength? }
 // where `t` is local progress [0..1], `dr/dg/db` are channel deltas (in RGB
 // units), `width` is the half-width of a tent falloff around t (default 0.06),
-// and `strength` scales the delta (default 1). Provide direction-specific
-// arrays using the same shape/destination naming as waypoints.
-// The older `waypointsToInner` / `waypointsToOuter` / `waypoints` fields are
-// accepted as fallbacks when a shape-specific list is absent.
+// and `strength` scales the delta (default 1). Use direction-specific arrays:
+//   outerChromaticNudgesToInner / outerChromaticNudgesToOuter
+//   innerChromaticNudgesToInner / innerChromaticNudgesToOuter
+// The older `chromaticNudgesToInner` / `chromaticNudgesToOuter` / `chromaticNudges`
+// fields are accepted as fallbacks when a shape-specific list is absent.
 export const DEFAULT_SWAP_PARAMS = Object.freeze({
   outerColor: { r: 0, g: 0, b: 0 },
   // outerColor: { r: 230, g: 224, b: 255 },
@@ -60,30 +46,6 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
   // innerColor: { r: 8, g: 8, b: 12 },
   // innerColor: { r: 14, g: 10, b: 200 },
   // innerColor: { r: 0, g: 0, b: 220 },
-  // outerWaypointsToInner: [
-  //   { t: 0.5, color: { r: 132, g: 124, b: 120 } }
-  // ],
-  // outerWaypointsToOuter: [
-  //   { t: 0.5, color: { r: 120, g: 124, b: 132 } }
-  // ],
-  innerWaypointsToOuter: [
-    // { t: 0.48, color: { r: 0.655*255, g: 0.627*255, b: 0.608*255 } },
-    // { t: 0.52, color: { r: 0.608*255, g: 0.694*255, b: 0.404*255 } },
-    // { t: 0.54, color: { r: 0.561*255, g: 0.761*255, b: 0.404*255 } },
-    // { t: 0.56, color: { r: 0.616*255, g: 0.400*255, b: 0.365*255 } },
-    // { t: 0.45, color: { r: 155, g: 155, b: 160 } },
-    // { t: 0.55, color: { r: 155, g: 160, b: 155 } },
-    
-  ],
-  innerWaypointsToInner: [
-  //  
-    // { t: 0.45, color: { r: 165, g: 160, b: 155 } },
-    // { t: 0.55, color: { r: 165, g: 155, b: 155 } },
-    // { t: 0.34, color: { r: 171, g: 178, b: 153 } },
-    // { t: 0.52, color: { r: 80, g: 127, b: 86 } },
-    // { t: 0.64, color: { r: 81, g: 34, b: 22 } },
-    // { t: 0.56, color: { r: 0.616*125, g: 0.400*125, b: 0.365*125 } },
-  ],
 
   //black to white
   outerChromaticNudgesToOuter: [
@@ -115,7 +77,6 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
     { t: 0.42, dr: +3, dg: +8,  db: +0, width: 0.15, strength: 1.0 },
     { t: 0.44, dr: +1, dg: +4, db: +4, width: 0.15, strength: 1.0 },
     { t: 0.46, dr: +0, dg: +3, db: +6, width: 0.15, strength: 1.0 },
-    // { t: 0.50, dr: +0, dg: +3, db: +8, width: 0.05, strength: 1.0 }
   ],
 
     // { t: 0.45, dr: +0, dg: +5,  db: +32, width: 0.1, strength: 1.0 },
@@ -454,28 +415,6 @@ function resolveSwapCycleSeconds(swap) {
   return CYCLE_SECONDS / cpm
 }
 
-// Picks one of the four (shape, destination) waypoint lists. Falls back to
-// the legacy shape-agnostic `waypointsTo*` fields and finally the flat
-// `waypoints` array so older configs still render.
-//   shape: 'outer' | 'inner'
-//   toInner: true if this shape is heading toward innerColor, false if it's
-//            heading toward outerColor.
-function selectWaypoints(swap, shape, toInner) {
-  if (!swap) return null
-  let primary
-  if (shape === 'outer') {
-    primary = toInner ? swap.outerWaypointsToInner : swap.outerWaypointsToOuter
-  } else {
-    primary = toInner ? swap.innerWaypointsToInner : swap.innerWaypointsToOuter
-  }
-  if (primary && primary.length > 0) return primary
-  const legacyDir = toInner ? swap.waypointsToInner : swap.waypointsToOuter
-  if (legacyDir && legacyDir.length > 0) return legacyDir
-  const legacyFlat = swap.waypoints
-  if (legacyFlat && legacyFlat.length > 0) return legacyFlat
-  return null
-}
-
 // Picks one of the four (shape, destination) chromatic-nudge lists.
 // Falls back to direction-agnostic legacy lists when present.
 function selectChromaticNudges(swap, shape, toInner) {
@@ -492,44 +431,6 @@ function selectChromaticNudges(swap, shape, toInner) {
   const legacyFlat = swap.chromaticNudges
   if (legacyFlat && legacyFlat.length > 0) return legacyFlat
   return null
-}
-
-// Samples a piecewise-linear color path that starts at `start`, passes
-// through `waypoints` (each { t, color }), and ends at `end`, at local
-// progress p in [0,1]. Writes components into the module-level scratch
-// object and returns it. The caller MUST read the returned values before
-// calling this again because the scratch is reused.
-const _sampleOut = { r: 0, g: 0, b: 0 }
-function sampleColorPath(start, end, waypoints, p) {
-  const pc = p < 0 ? 0 : (p > 1 ? 1 : p)
-
-  if (!waypoints || waypoints.length === 0) {
-    _sampleOut.r = start.r + (end.r - start.r) * pc
-    _sampleOut.g = start.g + (end.g - start.g) * pc
-    _sampleOut.b = start.b + (end.b - start.b) * pc
-    return _sampleOut
-  }
-
-  // Walk the stops (implicit t=0 start, explicit waypoints, implicit t=1
-  // end) and locate the segment containing pc. Short lists (≤4 waypoints)
-  // make the linear scan cheaper than allocating a sorted array per call.
-  let aT = 0, aR = start.r, aG = start.g, aB = start.b
-  let bT = 1, bR = end.r, bG = end.g, bB = end.b
-  for (let i = 0; i < waypoints.length; i++) {
-    const w = waypoints[i]
-    const c = w.color || w
-    if (pc <= w.t) {
-      bT = w.t; bR = c.r; bG = c.g; bB = c.b
-      break
-    }
-    aT = w.t; aR = c.r; aG = c.g; aB = c.b
-  }
-  const span = bT - aT
-  const f = span > 1e-9 ? (pc - aT) / span : 0
-  _sampleOut.r = aR + (bR - aR) * f
-  _sampleOut.g = aG + (bG - aG) * f
-  _sampleOut.b = aB + (bB - aB) * f
-  return _sampleOut
 }
 
 // Applies additive RGB nudges near keyframes in local progress space.
@@ -705,18 +606,9 @@ function applyChromaticPost(base, minuteIndex, swap, localP, manualNudges, chrom
 // Returns { outerR,outerG,outerB, innerR,innerG,innerB } as integers 0..255.
 // `minuteIndex` is consulted for y-wave canonical row/column mapping.
 //
-// Each shape walks its own independently-configured color path:
-//   Ramp-up   (direction=+1): outer travels outerColor → innerColor using
-//                             outerWaypointsToInner. Simultaneously, inner
-//                             travels innerColor → outerColor using
-//                             innerWaypointsToOuter.
-//   Ramp-down (direction=-1): outer travels innerColor → outerColor using
-//                             outerWaypointsToOuter. Simultaneously, inner
-//                             travels outerColor → innerColor using
-//                             innerWaypointsToInner.
-// Each shape's waypoint `t` is its own local progress (0 = just starting,
-// 1 = arrived), not the raw phase progress, so the two palettes can be
-// authored independently without mirror-math gymnastics.
+// Each shape lerps between its phase endpoints; chromatic nudges (when
+// configured) sit on top of that base lerp. Local progress `t` for nudges
+// is per-shape along its own leg (0 = start of leg, 1 = end).
 // Multiplier in [1 - handShadeDepth, 1] keyed off the cell's minute-hand
 // direction. `axis === 'horizontal'` pivots the bright/dark poles to 3/9
 // o'clock; default 'vertical' keeps them at 12/6. Returns 1 (no effect) when
@@ -736,7 +628,7 @@ export function getHandShadeFactor(secondInMinute, minuteIndex, swap) {
   return 1 - depth * (1 - unit)
 }
 
-// Resolves waypoint lists, chroma lists, and local progress for both shapes.
+// Resolves chroma lists and local progress for both shapes.
 // Used by computeSwapColors and inner spatial-gradient fill.
 function resolveSwapColorBranches(secondInMinute, minuteIndex, gridRow, gridRowCount, swap) {
   const crossSecond = getSwapCrossSecond(minuteIndex, gridRow, gridRowCount, swap, secondInMinute)
@@ -747,23 +639,19 @@ function resolveSwapColorBranches(secondInMinute, minuteIndex, gridRow, gridRowC
   const O = swap.outerColor
   const I = swap.innerColor
 
-  let outerStart, outerEnd, outerList, outerNudges
-  let innerStart, innerEnd, innerList, innerNudges, localP
+  let outerStart, outerEnd, outerNudges
+  let innerStart, innerEnd, innerNudges, localP
   if (direction < 0) {
     localP = 1 - t
     outerStart = I; outerEnd = O
-    outerList = selectWaypoints(swap, 'outer', false)
     outerNudges = selectChromaticNudges(swap, 'outer', false)
     innerStart = O; innerEnd = I
-    innerList = selectWaypoints(swap, 'inner', true)
     innerNudges = selectChromaticNudges(swap, 'inner', true)
   } else {
     localP = t
     outerStart = O; outerEnd = I
-    outerList = selectWaypoints(swap, 'outer', true)
     outerNudges = selectChromaticNudges(swap, 'outer', true)
     innerStart = I; innerEnd = O
-    innerList = selectWaypoints(swap, 'inner', false)
     innerNudges = selectChromaticNudges(swap, 'inner', false)
   }
 
@@ -780,12 +668,10 @@ function resolveSwapColorBranches(secondInMinute, minuteIndex, gridRow, gridRowC
     I,
     outerStart,
     outerEnd,
-    outerList,
     outerNudges,
     outerChromaOpts,
     innerStart,
     innerEnd,
-    innerList,
     innerNudges,
     innerChromaOpts
   }
@@ -849,7 +735,7 @@ function createInnerSpatialGradient(
   )
   if (!innerSpatialChromaticWantsGradient(swap, b.innerNudges, b.innerChromaOpts)) return null
 
-  const innerBaseFixed = sampleColorPath(b.innerStart, b.innerEnd, b.innerList, b.localP)
+  const innerBaseFixed = lerpRgb(b.innerStart, b.innerEnd, b.localP)
   const miC = minuteIndexForChroma != null ? minuteIndexForChroma : minuteIndexForPhase
   const shade = getHandShadeFactor(secondInMinute, miC, swap)
   const yMid = y + h * 0.5
@@ -884,20 +770,20 @@ function createInnerSpatialGradient(
 
 export function computeSwapColors(secondInMinute, minuteIndex, gridRow, gridRowCount, swap, params = null) {
   const b = resolveSwapColorBranches(secondInMinute, minuteIndex, gridRow, gridRowCount, swap)
-  const { innerFade, localP, O, I, outerStart, outerEnd, outerList, outerNudges, outerChromaOpts,
-    innerStart, innerEnd, innerList, innerNudges, innerChromaOpts } = b
+  const { innerFade, localP, O, I, outerStart, outerEnd, outerNudges, outerChromaOpts,
+    innerStart, innerEnd, innerNudges, innerChromaOpts } = b
 
   let oR, oG, oB
   if (innerFade) {
     oR = O.r; oG = O.g; oB = O.b
   } else {
-    const outerBase = sampleColorPath(outerStart, outerEnd, outerList, localP)
+    const outerBase = lerpRgb(outerStart, outerEnd, localP)
     const outer = applyChromaticPost(
       outerBase, minuteIndex, swap, localP, outerNudges, outerChromaOpts
     )
     oR = outer.r; oG = outer.g; oB = outer.b
   }
-  const innerBase = sampleColorPath(innerStart, innerEnd, innerList, localP)
+  const innerBase = lerpRgb(innerStart, innerEnd, localP)
   const inner = applyChromaticPost(
     innerBase, minuteIndex, swap, localP, innerNudges, innerChromaOpts
   )
