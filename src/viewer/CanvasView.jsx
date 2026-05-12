@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { mountSingleClock, mountClockGrid } from '../render/clockHullMount.js'
 import {
   DEFAULT_SWAP_PARAMS,
+  drawPieceHandSpines,
   getMinuteIndexFromDate,
   getSecondInMinuteFromDate
 } from '../render/clockHullRenderer.js'
@@ -19,7 +20,9 @@ export function CanvasView({
   onCanvasClick,
   onGridCellClick,
   /** When set, overrides `.live-canvas` cursor (e.g. half-field w/e-resize on piece view). */
-  canvasCursor
+  canvasCursor,
+  /** Square mode only: draws hull hand centerlines (hour / minute / second) after each frame. */
+  overlayReferenceHands
 }) {
   const canvasRef = useRef(null)
   const dimsRef = useRef(FALLBACK_DIMS)
@@ -73,7 +76,20 @@ export function CanvasView({
         getGridRow,
         gridRowCount: getGridRowCount,
         swapParams,
-        targetFps: 60
+        targetFps: 60,
+        afterDraw: overlayReferenceHands
+          ? (ctx, meta) =>
+              drawPieceHandSpines(
+                ctx,
+                meta.bounds,
+                meta.clockParams,
+                meta.swap,
+                meta.secondInMinute,
+                meta.minuteIndex,
+                meta.gridRow,
+                meta.gridRowCount
+              )
+          : undefined
       })
     } else {
       handle = mountClockGrid(canvas, {
@@ -115,7 +131,8 @@ export function CanvasView({
     selectedIndex,
     swapParams,
     gridLayoutMode,
-    mode === 'gallery' ? getSoldMinuteIndices : null
+    mode === 'gallery' ? getSoldMinuteIndices : null,
+    overlayReferenceHands
   ])
 
   const handleClick = (e) => {

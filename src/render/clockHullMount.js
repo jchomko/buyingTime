@@ -101,7 +101,13 @@ export function mountSingleClock(canvas, {
   clockParams = DEFAULT_CLOCK_HULL_PARAMS,
   swapParams = DEFAULT_SWAP_PARAMS,
   targetFps = 60,
-  onFrame = null
+  onFrame = null,
+  /**
+   * Optional: called after `drawPiece` each frame. Receives `(ctx, meta)` where
+   * `meta` is `{ bounds, minuteIndex, secondInMinute, clockParams, swap, gridRow, gridRowCount }`
+   * in canvas pixels / same values as `drawPiece`.
+   */
+  afterDraw = null
 }) {
   const ctx = canvas.getContext('2d')
   const tracker = makeFpsTracker()
@@ -124,6 +130,17 @@ export function mountSingleClock(canvas, {
       ctx, { x: 0, y: 0, w, h }, clockParams, swapParams,
       sec, idx, row, readRowCount(), null
     )
+    if (afterDraw) {
+      afterDraw(ctx, {
+        bounds: { x: 0, y: 0, w, h },
+        minuteIndex: idx,
+        secondInMinute: sec,
+        clockParams,
+        swap: swapParams,
+        gridRow: row,
+        gridRowCount: readRowCount()
+      })
+    }
   }
 
   const stop = makeLoop({ targetFps, draw, tracker, onFrame })

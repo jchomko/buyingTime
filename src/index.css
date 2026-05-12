@@ -536,7 +536,51 @@ a.toggle-button.toolbar-page-link {
   padding-top: 0.75rem;
 }
 
+/* Info page body copy: links use same color as paragraphs (theme fg on .info-shell). */
+.info-shell .content-main-copy a {
+  color: inherit;
+  font-weight: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+/* Info page: compact live day cell; optional reference hands via CanvasView. */
+.info-day-embed {
+  margin-top: 1.1rem;
+  /* max-width: min(100%, 280px); */
+}
+
+.info-day-embed__frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  background: #000;
+  border-radius: 0.0rem;
+  overflow: hidden;
+  border: 0px solid rgba(255, 255, 255, 0.12);
+}
+
+.info-day-embed-caption {
+  margin-top: 1rem !important;
+  font-size: 0.88rem;
+  opacity: 0.82;
+  line-height: 1.45 !important;
+}
+
+.info-day-embed-caption a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
 .content-section h2 {
+  margin: 0 0 0.75rem;
+}
+
+.content-section h3 {
+  font-size: clamp(1.05rem, 2.8vmin, 1.35rem);
+  font-weight: 300;
+  opacity: 0.72;
   margin: 0 0 0.75rem;
 }
 

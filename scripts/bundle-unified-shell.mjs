@@ -19,7 +19,24 @@ if (!moduleScriptMatch) {
   throw new Error("Could not find <script type='module'> block in unified-clock-shell.html")
 }
 
-const normalizedImports = moduleScriptMatch[1].replaceAll("from '/src/", "from './src/")
+/** Same marker as embed-preview: Solidity `chunk-*` splits on this for `Strings.toString(tokenId)`. */
+const tokenBlockPattern =
+  /const params = new URLSearchParams\(window\.location\.search\)\s*\n\s*const tokenIdRaw = Number\(params\.get\('tokenId'\) \?\? 0\)\s*\n\s*const tokenId = Number\.isFinite\(tokenIdRaw\) \? Math\.max\(0, Math\.floor\(tokenIdRaw\)\) : 0\s*\n/
+
+const moduleSourceWithTokenPlaceholder = moduleScriptMatch[1].replace(
+  tokenBlockPattern,
+  `const tokenId = __TOKEN_ID__\n`
+)
+if (!moduleSourceWithTokenPlaceholder.includes("__TOKEN_ID__")) {
+  throw new Error(
+    "Token placeholder insertion failed before bundling. Expected URLSearchParams token block in unified-clock-shell.html."
+  )
+}
+
+const normalizedImports = moduleSourceWithTokenPlaceholder.replaceAll(
+  "from '/src/",
+  "from './src/"
+)
 const bundleResult = await build({
   stdin: {
     contents: normalizedImports,
@@ -37,6 +54,7 @@ const bundleResult = await build({
 let bundledJs = bundleResult.outputFiles[0].text
 const terserResult = await minifyJs(bundledJs, {
   compress: { ecma: 2020, passes: 2 },
+  mangle: { reserved: ["__TOKEN_ID__"] },
   ecma: 2020,
   format: { comments: false }
 })

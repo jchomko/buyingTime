@@ -603,15 +603,24 @@ function emitCapsule(k, ax, ay, bx, by, radius) {
   return k
 }
 
-function emitHand(k, angleRad, len, tail, frameReach, handRadius, hdReach) {
+/** Centerline of one hand capsule (same math as `emitHand` / hull construction). */
+function handCapsuleCenterline(angleRad, len, tail, hdReach) {
   const dx = Math.cos(angleRad)
   const dy = Math.sin(angleRad)
   const forward = BASE_RADIUS * hdReach * len
   const backward = forward * tail
-  const ax = -dx * backward
-  const ay = -dy * backward
-  const bx = dx * forward
-  const by = dy * forward
+  return {
+    ax: -dx * backward,
+    ay: -dy * backward,
+    bx: dx * forward,
+    by: dy * forward
+  }
+}
+
+function emitHand(k, angleRad, len, tail, frameReach, handRadius, hdReach) {
+  const { ax, ay, bx, by } = handCapsuleCenterline(angleRad, len, tail, hdReach)
+  const dx = Math.cos(angleRad)
+  const dy = Math.sin(angleRad)
   k = emitCapsule(k, ax, ay, bx, by, handRadius)
 
   // Frame-reach extension points keep the hull anchored at the piece boundary
@@ -666,6 +675,8 @@ function computeHull(n) {
 }
 
 // -------- hand angles --------
+// `minuteIndex` is interpreted mod 720 as a 12h clock face (hour = floor(phase/60),
+// minute = phase % 60); `secondInMinute` adds smooth motion for hands when `useSec`.
 
 function computeHandAngles(minuteIndex, secondInMinute, useSec) {
   const minutePhase = ((minuteIndex % 720) + 720) % 720
@@ -735,6 +746,75 @@ export function drawPiece(
   ctx.beginPath()
   appendHullSubpath(ctx, bounds.x, bounds.y, bounds.w, bounds.h, params, secondInMinute, minuteIndex)
   ctx.fill()
+}
+
+/**
+ * Highlights the three hand centerlines used to build the hull (hour, minute,
+ * second), using `computeHandAngles` and `handCapsuleCenterline` — same
+ * geometry as `emitHand` / `buildHullPoints`, not a separate analog clock.
+ *
+ * Mint-site only: not imported by embed-day-preview / unified-clock-shell, so
+ * esbuild drops this export from those inline bundles.
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {{ x: number, y: number, w: number, h: number }} bounds  Cell in canvas pixels
+ * @param {object} params  Same clock hull params as `drawPiece` (e.g. `DEFAULT_CLOCK_HULL_PARAMS`).
+ * @param {object} swap  Same swap / wave params as `drawPiece` (drives outer “background” rgb).
+ * @param {number} secondInMinute  Same as `drawPiece`.
+ * @param {number} minuteIndex  Same as `drawPiece`.
+ * @param {number} gridRow  Row index for `computeSwapColors`, same as `drawPiece`.
+ * @param {number} gridRowCount  Row count for `computeSwapColors`, same as `drawPiece`.
+ */
+export function drawPieceHandSpines(
+  ctx, bounds, params, swap, secondInMinute, minuteIndex, gridRow, gridRowCount
+) {
+  const ang = computeHandAngles(minuteIndex, secondInMinute, params.useSec)
+  const hd = params.hdReach
+  const bg = computeSwapColors(secondInMinute, minuteIndex, gridRow, gridRowCount, swap, params)
+  const handColor = `rgba(${bg.outerR},${bg.outerG},${bg.outerB},0.94)`
+  const hands = [
+    { seg: handCapsuleCenterline(ang.hour, params.hLen*0.9, 0.1, hd), color: handColor },
+    { seg: handCapsuleCenterline(ang.minute, params.mLen*1.3, 0.1, hd), color: handColor }
+  ]
+  if (params.useSec) {
+    hands.push({
+      seg: handCapsuleCenterline(ang.second, params.sLen*2.1, 0.1, hd),
+      color: handColor
+    })
+  }
+
+  const scale = params.scl
+  const cx = bounds.x + bounds.w / 2
+  const cy = bounds.y + bounds.h / 2
+  const sx = bounds.w / 100
+  const sy = bounds.h / 100
+  const toPix = (lx, ly) => [cx + lx * scale * sx, cy + ly * scale * sy]
+
+  const lw = Math.max(1.25, Math.min(bounds.w, bounds.h) * 0.009)
+
+  ctx.save()
+  ctx.lineCap = 'square'
+  ctx.lineJoin = 'round'
+
+  const strokeSeg = (seg, style, width) => {
+    const [x0, y0] = toPix(seg.ax, seg.ay)
+    const [x1, y1] = toPix(seg.bx, seg.by)
+    ctx.strokeStyle = style
+    ctx.lineWidth = width
+    ctx.beginPath()
+    ctx.moveTo(x0, y0)
+    ctx.lineTo(x1, y1)
+    ctx.stroke()
+  }
+
+  for (let i = 0; i < hands.length; i++) {
+    strokeSeg(hands[i].seg, 'rgba(6, 8, 14, 0)', lw + 0.2)
+  }
+  for (let i = 0; i < hands.length; i++) {
+    strokeSeg(hands[i].seg, hands[i].color, lw)
+  }
+
+  ctx.restore()
 }
 
 // Grid renderer. Two code paths:
