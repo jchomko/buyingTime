@@ -14,7 +14,8 @@
     "chunk:embed-grid": "node ./scripts/chunk-embed-grid-preview.mjs",
     "minify:embed-day": "node ./scripts/minify-embed-day-preview.mjs",
     "chunk:embed-day": "node ./scripts/chunk-embed-day-preview.mjs",
-    "build:embeds": "npm run minify:embed && npm run chunk:embed && npm run minify:embed-grid && npm run chunk:embed-grid && npm run minify:embed-day && npm run chunk:embed-day"
+    "build:embeds": "npm run minify:embed && npm run chunk:embed && npm run minify:embed-grid && npm run chunk:embed-grid && npm run minify:embed-day && npm run chunk:embed-day",
+    "bundle:unified-shell": "node ./scripts/bundle-unified-shell.mjs"
   },
   "dependencies": {
     "@rainbow-me/rainbowkit": "^2.2.10",
