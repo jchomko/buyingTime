@@ -3,23 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Buying Time Embed Preview</title>
+    <title>Buying Time</title>
     <style>
-      html, body {
+      html,
+      body {
         margin: 0;
         width: 100%;
         height: 100%;
         overflow: hidden;
         background: #000;
-        color: #fff;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
-
       #app {
         position: fixed;
         inset: 0;
       }
-
       #preview-canvas {
         position: absolute;
         inset: 0;
@@ -36,13 +33,12 @@
 
     <script type="module">
       import { mountSingleClock } from '/src/render/clockHullMount.js'
-      import { DEFAULT_SWAP_PARAMS, getSecondInMinuteFromDate } from '/src/render/clockHullRenderer.js'
-      import { TOTAL_SQUARES, normalizeMinuteIndex, resolveGridDims } from '/src/timeGrid.js'
-
-      const params = new URLSearchParams(window.location.search)
-      const tokenIdRaw = Number(params.get('tokenId') ?? 0)
-      const tokenId = Number.isFinite(tokenIdRaw) ? Math.max(0, Math.floor(tokenIdRaw)) : 0
-      const selectedMinute = normalizeMinuteIndex(tokenId % TOTAL_SQUARES)
+      import {
+        DEFAULT_SWAP_PARAMS,
+        getMinuteIndexFromDate,
+        getSecondInMinuteFromDate
+      } from '/src/render/clockHullRenderer.js'
+      import { TOTAL_SQUARES, resolveGridDims } from '/src/timeGrid.js'
 
       const canvas = document.getElementById('preview-canvas')
 
@@ -60,9 +56,10 @@
       }
 
       const handle = mountSingleClock(canvas, {
-        getMinuteIndex: () => selectedMinute,
+        getMinuteIndex: () => getMinuteIndexFromDate(new Date(), TOTAL_SQUARES),
         getSecondInMinute: () => getSecondInMinuteFromDate(new Date()),
-        getGridRow: () => Math.floor(selectedMinute / dimsRef.current.cols),
+        getGridRow: () =>
+          Math.floor(getMinuteIndexFromDate(new Date(), TOTAL_SQUARES) / dimsRef.current.cols),
         gridRowCount: () => dimsRef.current.rows,
         swapParams,
         targetFps: 60

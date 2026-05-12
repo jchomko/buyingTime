@@ -6,54 +6,54 @@
 //
 // Coordinate model: every piece is designed inside a virtual 100x100 unit box
 // centered at (50,50). Geometry is computed in a centered system (origin at 0)
-// and placed at (50,50) with shapeScale. The draw helpers stretch that box to
+// and placed at (50,50) with shape scale (`scl`). The draw helpers stretch that box to
 // whatever pixel bounds the caller supplies (warping the aspect as needed).
 
 export const DEFAULT_CLOCK_HULL_PARAMS = Object.freeze({
-  hourLength: 0.9,
-  minuteLength: 1.0,
-  secondLength: 1.0,
-  hourTail: 0.7,
-  minuteTail: 0.8,
-  secondTail: 0.8,
-  handReach: 1.0,
-  frameHourReach: 1.9,
-  frameMinuteReach: 2.0,
-  frameSecondReach: 2.0,
-  shapeScale: 1.0,
-  handWidth: 1.0,
-  includeSecond: true
+  hLen: 0.9,
+  mLen: 1.0,
+  sLen: 1.0,
+  hTail: 0.7,
+  mTail: 0.8,
+  sTail: 0.8,
+  hdReach: 1.0,
+  frHr: 1.9,
+  frMr: 2.0,
+  frSr: 2.0,
+  scl: 1.0,
+  hdW: 1.0,
+  useSec: true
 })
 
 // `mode` is kept for compatibility but y-wave is the only supported schedule.
 // Cross-second is derived from canonical row (plus optional edge advance).
-// Base colors linearly interpolate between outerColor and innerColor per shape
+// Base colors linearly interpolate between colOut and colIn per shape
 // and swap phase. Optional chromatic "nudge" lists apply additive RGB offsets
 // on top of that base lerp. Each nudge:
-//   { t, dr, dg, db, width?, strength? }
+//   { t, dr, dg, db, wid?, str? }  (aliases `width` / `strength` still accepted)
 // where `t` is local progress [0..1], `dr/dg/db` are channel deltas (in RGB
-// units), `width` is the half-width of a tent falloff around t (default 0.06),
-// and `strength` scales the delta (default 1). Use direction-specific arrays:
-//   outerChromaticNudgesToInner / outerChromaticNudgesToOuter
-//   innerChromaticNudgesToInner / innerChromaticNudgesToOuter
-// The older `chromaticNudgesToInner` / `chromaticNudgesToOuter` / `chromaticNudges`
+// units), `wid` is the half-width of a tent falloff around t (default 0.06),
+// and `str` scales the delta (default 1). Use direction-specific arrays:
+//   nOi / nOo
+//   nIi / nIo
+// The older `nLegI` / `nLegO` / `nLeg`
 // fields are accepted as fallbacks when a shape-specific list is absent.
 export const DEFAULT_SWAP_PARAMS = Object.freeze({
-  outerColor: { r: 0, g: 0, b: 0 },
-  // outerColor: { r: 230, g: 224, b: 255 },
-  // outerColor: { r: 204, g: 40, b: 40 },
-  innerColor: { r: 255, g: 255, b: 255 },
-  // innerColor: { r: 8, g: 8, b: 12 },
-  // innerColor: { r: 14, g: 10, b: 200 },
-  // innerColor: { r: 0, g: 0, b: 220 },
+  colOut: { r: 0, g: 0, b: 0 },
+  // colOut: { r: 230, g: 224, b: 255 },
+  // colOut: { r: 204, g: 40, b: 40 },
+  colIn: { r: 255, g: 255, b: 255 },
+  // colIn: { r: 8, g: 8, b: 12 },
+  // colIn: { r: 14, g: 10, b: 200 },
+  // colIn: { r: 0, g: 0, b: 220 },
 
   //black to white
-  outerChromaticNudgesToOuter: [
+  nOo: [
     // { t: 0.65, dr: +0, dg: +3,  db: +12, width: 0.3, strength: 1.0 },
     // { t: 0.70, dr: +0, dg: +18,  db: +6, width: 0.3, strength: 1.0 },
     // { t: 0.75, dr: +8, dg: +10, db: +0, width: 0.3, strength: 1.0 },
     // { t: 0.55, dr: +0, dg: +1, db: +0, width: 0.3, strength: 1.0 }
-    { t: 0.50, dr: +5, dg: +0,  db: +0, width: 0.15, strength: 1.0 },
+    { t: 0.50, dr: +5, dg: +0,  db: +0, wid: 0.05, str: 1.0 },
     // { t: 0.54, dr: +3, dg: +8,  db: +0, width: 0.05, strength: 1.0 },
     // { t: 0.52, dr: +1, dg: +4, db: +4, width: 0.05, strength: 1.0 },
     // { t: 0.50, dr: +0, dg: +3, db: +6, width: 0.05, strength: 1.0 },
@@ -61,22 +61,26 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
   ],
   
     //outer black to white
-   outerChromaticNudgesToInner: [
+   nOi: [
   //  { t: 0.55, dr: +10, dg: +0, db: +0, width: 0.3, strength: 1.0 }
+  // { t: 0.40, dr: +0, dg: +1,  db: +12, width: 0.15, strength: 1.0 },
+  // { t: 0.42, dr: +1, dg: +4,  db: +4, width: 0.15, strength: 1.0 },
+  // { t: 0.44, dr: +3, dg: +8, db: +0, width: 0.15, strength: 1.0 },
+  // { t: 0.46, dr: +12, dg: +1, db: +0, width: 0.15, strength: 1.0 },
    ],
 
 
   //inner white to black
-  innerChromaticNudgesToOuter: [ 
+  nIo: [ 
     // { t: 0.8, dr: +0, dg: +4,  db: +12, width: 0.3, strength: 1.0 },
     // { t: 0.6, dr: +0, dg: +8,  db: +8, width: 0.3, strength: 1.0 },
     // { t: 0.3, dr: +12, dg: +10, db: +0, width: 0.3, strength: 1.0 },
     // { t: 0.1, dr: +8, dg: +1, db: +0, width: 0.3, strength: 1.0 }],
 
-    { t: 0.40, dr: +8, dg: +1,  db: +0, width: 0.15, strength: 1.0 },
-    { t: 0.42, dr: +3, dg: +8,  db: +0, width: 0.15, strength: 1.0 },
-    { t: 0.44, dr: +1, dg: +4, db: +4, width: 0.15, strength: 1.0 },
-    { t: 0.46, dr: +0, dg: +3, db: +6, width: 0.15, strength: 1.0 },
+    { t: 0.40, dr: +8, dg: +1,  db: +0, wid: 0.1, str: 1.0 },
+    { t: 0.42, dr: +4, dg: +8,  db: +0, wid: 0.1, str: 1.0 },
+    { t: 0.44, dr: +2, dg: +6, db: +6, wid: 0.1, str: 1.0 },
+    { t: 0.46, dr: +0, dg: +2, db: +8, wid: 0.1, str: 1.0 },
   ],
 
     // { t: 0.45, dr: +0, dg: +5,  db: +32, width: 0.1, strength: 1.0 },
@@ -85,8 +89,8 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
     // { t: 0.60, dr: +34, dg: +1, db: +0, width: 0.1, strength: 1.0 }],
 
     //inner black to white 
-    innerChromaticNudgesToInner: [
-      { t: 0.50, dr: +0, dg: +0,  db: +5, width: 0.15, strength: 1.0 },
+    nIi: [
+      { t: 0.50, dr: +0, dg: +0,  db: +5, wid: 0.15, str: 1.0 },
    
       // { t: 0.0, dr: +0, dg: +3,  db: +2, width: 0.3, strength: 1.0 },
       // { t: 0.1, dr: +0, dg: +8,  db: +6, width: 0.3, strength: 1.0 },
@@ -98,143 +102,63 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
       // { t: 0.60, dr: +6, dg: +5, db: +0, width: 0.1, strength: 1.0 }
     ],
 
-  swapLead: 1.4,
-  swapLag: 8.0,
-  // How the two shapes animate during each swap event:
-  //   'swap'       — classic. Outer and inner exchange colors: outer ramps
-  //                  outerColor → innerColor and back, inner ramps
-  //                  innerColor → outerColor and back. Each event is a full
-  //                  color exchange.
-  //   'inner-fade' — outer stays pinned at outerColor forever (a static
-  //                  background). Only the inner shape animates, going
-  //                  innerColor → outerColor → innerColor across each cycle,
-  //                  so at the peak the inner hulls match the background and
-  //                  momentarily "disappear." Pair with outerColor=white and
-  //                  innerColor=black (or any steady-hull color) for the
-  //                  white-bg / black-hull reveal look.
-  // Orthogonal to `mode` — the wave SCHEDULE is y-wave only.
-  // still controls when each cell flips; `swapBehavior` controls WHAT the
-  // flip looks like.
-  swapBehavior: 'inner-fade',
-  // Per-cell intensity multiplier applied to the INNER shape only, driven by
-  // each clock's minute-hand angle. Cells where the hand points at the
-  // "bright pole" render the inner at full color; cells where it points at
-  // the "dark pole" get their inner RGB multiplied by (1 - handShadeDepth),
-  // pushing the hull toward black. The outer/background is never modulated.
-  // 0 disables the effect. Typical range 0.3–0.7. Determined purely by
-  // (secondInMinute, minuteIndex), so deterministic for the on-chain port.
-  handShadeDepth: 0.0,
-  // Axis the shading runs along:
-  //   'vertical'   — bright at 12, dark at 6 (cos of the hand turn).
-  //   'horizontal' — bright at 3, dark at 9 (sin of the hand turn).
-  handShadeAxis: 'vertical',
+  xLead: 1.4,
+  xLag: 8.0,
+  //   'swap'       — outer and inner both ramp: background and hull trade roles
+  //                  each cycle (classic full swap).
+  //   'inner-fade' — outer stays at colOut; only the inner hull animates.
+  xBeh: 'swap',
   // How many full swap cycles fit inside one real minute. 1 = classic (the
   // whole ramp-up / plateau / ramp-down schedule spans 60s, so each cell
   // flips once per minute). 2 = cycle compresses to 30s (each cell flips
   // twice per minute, wave front crosses the grid twice). All crossSecond-
-  // valued params (waveTopSecond, waveBottomSecond) are interpreted
-  // within [0, 60/swapCyclesPerMinute).
-  swapCyclesPerMinute: 3,
+  // valued params (wTop, wBot) are interpreted within [0, 60 / cycPm).
+  cycPm: 3,
   // Optional cycle-specific y-wave overrides. Cycle index is derived from
   // secondInMinute and repeats when this list is shorter than
-  // swapCyclesPerMinute. Any omitted field falls back to the global wave*
+  // cycPm. Any omitted field falls back to the global wave*
   // setting below. Useful for per-cycle direction/style changes.
-  // Default example:
-  //   1) top-down ripple
-  //   2) bottom-up ripple
-  //   3) uniform (no ripple)
-  yWaveCycleParams: [
-    { waveTopSecond: 10.0, waveBottomSecond: 18.0, waveRippleEnabled: true },
-    { waveTopSecond: 10.0, waveBottomSecond: 18.0, waveRippleEnabled: true },
-    { waveTopSecond: 10.0, waveBottomSecond: 18.0, waveRippleEnabled: true  }
-  ],
+  // Default: one entry reused for every cycle (same as matching global wTop/
+  // wBot/wRip).
+  ywPrm: [{ wTop: 10.0, wBot: 18.0, wRip: true }],
   mode: 'y-wave',
   // When true (default), each cell's swap phase is staggered by canonical
   // row/column (y-wave "ripple"). When false, every cell shares the same
-  // cross-second so swap colors move in lockstep — hulls still animate per
-  // minuteIndex (hands, etc.). Optional `waveUniformCrossSecond` pins the
-  // shared second; otherwise the midpoint of waveTop/Bottom is used.
-  waveRippleEnabled: true,
-  waveUniformCrossSecond: null,
-  waveTopSecond: 10.0,
-  waveBottomSecond: 18.0,
+  // cross-second (the midpoint of waveTop/Bottom) so swap colors move in
+  // lockstep — hulls still animate per minuteIndex (hands, etc.).
+  wRip: true,
+  wTop: 10.0,
+  wBot: 18.0,
   // Shoaling exponent for the y-wave: 1 = linear (original), >1 compresses
   // cells' flip times toward the wave's destination (the row with the later
   // crossSecond), so the wave decelerates as it arrives — like an ocean wave
   // running into shallow water. Typical range 1.5–3.
-  waveShoalExponent: 2.0,
+  wShoal: 2.0,
   // Horizontal edge advance (seconds): cells in the canonical grid's left/
   // right edge columns flip up to this many seconds BEFORE cells at the
   // row's center, so the wave front bows upward at the edges (diffraction-
   // like). 0 disables the effect. Typical range 0.3–1.2.
-  waveEdgeAdvance: 0.6,
+  wAdv: 0.6,
   // Falloff exponent shaping how quickly the advance ramps from center (0)
   // to edge (full). 1 = linear, >1 keeps the middle of each row mostly flat
   // and only curves up near the ends. Typical range 1.5–3.
-  waveEdgeFalloff: 2.8,
+  wFall: 2.8,
   // Canonical grid dims for the y-wave. The cell's row and column are derived
   // from its minuteIndex against these constants, NOT the live display grid,
   // so the flip timing (shoaling + edge curl) is deterministic per minuteIndex
   // regardless of how the grid is laid out on screen. Must match the canonical
   // layout the on-chain contract uses.
-  waveCanonicalCols: 24,
-  waveCanonicalRows: 60,
-  // Chromatic peak tint source (additive peak in local swap progress space):
-  //   'manual' — use the four *ChromaticNudges* lists (default).
-  //   'gradient' — ignore those lists; sample `chromaticGradientStops` only along
-  //     canonical **row** (Y); pull through one tent (peakT / width).
-  //   'combo' — outer always uses manual nudges. Inner uses manual nudges while
-  //     the inner shape moves toward **innerColor** (ramp-down half), and gradient
-  //     while it moves toward **outerColor** (ramp-up half).
-  chromaticNudgeSource: 'manual',
-  // Experimental inner spatial gradient + chase + area luminance live in the mint
-  // UI "Chroma → Lab" preset (`SWAP_CHROMA_LAB_EXPERIMENTAL`), not these defaults.
-  innerSpatialChromaticGradient: false,
-  innerSpatialChromaticChasePerMinute: 0,
-  innerAreaLuminanceMod: false,
-  // Used when `innerAreaLuminanceMod` is on (Lab preset): edge blend toward light/dark.
-  innerAreaBlendEdge: 0.14,
-  innerAreaLightMultiplier: 1.42,
-  innerAreaDarkMultiplier: 0.24,
-  // If both set, use this fixed [min,max] area for every minute (legacy / global).
-  // Otherwise min/max are derived per minuteIndex from that minute's second sweep.
-  innerAreaModelMin: null,
-  innerAreaModelMax: null,
-  // Lab: inner brightness from minute vs second hand alignment (see SWAP_CHROMA_LAB_EXPERIMENTAL).
-  innerHandProximityLightness: false,
-  handProximityLightMultiplier: 1.48,
-  handProximityDarkMultiplier: 0.26,
-  // RGB stops for `chromaticNudgeSource === 'gradient'`, top → bottom on the
-  // canonical grid: row 0 uses the first stop, last row the last. Two stops =
-  // simple vertical lerp; N stops = piecewise-linear bands down the grid.
-  chromaticGradientStops: [
-    { r: 1, g: 2, b: 71 },
-    { r: 35, g: 104, b: 188 },
-    { r: 237, g: 226, b: 113 },
-    { r: 209, g: 23, b: 16 }
-  ],
-  // Center of the chromatic peak in local progress [0,1] (same space as nudge `t`).
-  chromaticGradientPeakT: 0.42,
-  // Half-width of the triangular falloff around peakT (wider = longer-lived tint).
-  chromaticGradientPeakWidth: 0.4,
-  // 0 = no pull toward the gradient; 1 = full lerp to gradient at peak center.
-  chromaticGradientStrength: 0.82,
-  // Global per-token additive RGB nudge, linearly interpolated from token 0
-  // to token `chromaticGlobalNudgeMaxIndex` (default 1440). Applied after
-  // manual/gradient/combo chroma to give each piece a subtle hue offset.
-  chromaticGlobalNudgeStart: { dr: 0, dg: 0, db: 0 },
-  chromaticGlobalNudgeEnd: { dr: 0, dg: 0, db: 0 },
-  chromaticGlobalNudgeMaxIndex: 1440,
+  wCols: 24,
+  wRows: 60,
+  // Global per-token additive RGB nudge along token id 0 → gNmax (default
+  // 1440). With gNm set, lerps start → mid in the first half of that range and
+  // mid → end in the second half; without mid, lerps start → end. Applied after
+  // chromatic nudges to give each piece a subtle hue offset.
+  gNs: { dr: 0, dg: 0, db: 15 },
+  gNm: { dr: 0, dg: 0, db: 0 },
+  gNe: { dr: 0, dg: 0, db: 15 },
+  gNmax: 1440,
   // Only y-wave parameters are used.
-})
-
-// Mint UI "Chroma → Lab" tab: merge into `swapParams` beside `chromaticNudgeSource: 'manual'`.
-export const SWAP_CHROMA_LAB_EXPERIMENTAL = Object.freeze({
-  innerSpatialChromaticGradient: true,
-  innerSpatialChromaticChasePerMinute: 1,
-  innerHandProximityLightness: true,
-  innerAreaLuminanceMod: false,
-  waveRippleEnabled: false
 })
 
 const PI = Math.PI
@@ -243,19 +167,16 @@ const BASE_RADIUS = 16
 const FRAME_HALF = 24
 const CYCLE_SECONDS = 60
 const CAP_STEPS = 4
-const DEBUG_LOG_SWAP_CYCLE = true
-let _lastLoggedSwapCycle = null
+// const DEBUG_LOG_SWAP_CYCLE = true
+// let _lastLoggedSwapCycle = null
 
 function clamp(v, a, b) { return v < a ? a : (v > b ? b : v) }
 function lerp(a, b, t) { return a + (b - a) * t }
-function fract01(x) {
-  return x - Math.floor(x)
-}
 
 // -------- swap colors --------
 
 // Cross-second schedule for the y-wave mode, derived purely from the cell's
-// canonical (col, row) — i.e. from minuteIndex against `waveCanonicalCols/Rows`,
+// canonical (col, row) — i.e. from minuteIndex against `wCols/Rows`,
 // NOT from the live display grid. Pinning the schedule to the canonical grid
 // keeps the animation deterministic per minuteIndex, which is what an on-chain
 // renderer (and any stored NFT metadata) needs.
@@ -264,7 +185,7 @@ function fract01(x) {
 //   - Shoaling: a power curve along `yNorm` that decelerates the wave as it
 //     reaches its destination (the row with the later crossSecond). Feels
 //     like an ocean wave running into a beach.
-//   - Edge advance: canonical-edge columns flip up to `waveEdgeAdvance` seconds
+//   - Edge advance: canonical-edge columns flip up to `wAdv` seconds
 //     before the center of the same row, so the wave front bows upward at the
 //     left/right boundaries.
 //
@@ -276,8 +197,8 @@ export function getYWaveSwapSecond(gridRow, gridRowCount, minuteIndex, swap) {
 }
 
 function getYWaveSwapSecondWithParams(minuteIndex, swap, p) {
-  const canonCols = swap.waveCanonicalCols > 0 ? swap.waveCanonicalCols | 0 : 24
-  const canonRows = swap.waveCanonicalRows > 0 ? swap.waveCanonicalRows | 0 : 60
+  const canonCols = swap.wCols > 0 ? swap.wCols | 0 : 24
+  const canonRows = swap.wRows > 0 ? swap.wRows | 0 : 60
   const total = canonCols * canonRows
   const idx = (((minuteIndex | 0) % total) + total) % total
   const col = idx % canonCols
@@ -285,9 +206,9 @@ function getYWaveSwapSecondWithParams(minuteIndex, swap, p) {
 
   const rowSpan = Math.max(1, canonRows - 1)
   const yNorm = clamp(row / rowSpan, 0, 1)
-  const shoal = p.waveShoalExponent > 0 ? p.waveShoalExponent : 1
-  const T = p.waveTopSecond
-  const B = p.waveBottomSecond
+  const shoal = p.wShoal > 0 ? p.wShoal : 1
+  const T = p.wTop
+  const B = p.wBot
 
   let base
   if (shoal === 1) {
@@ -302,12 +223,12 @@ function getYWaveSwapSecondWithParams(minuteIndex, swap, p) {
     base = topIsDestination ? B + shaped * (T - B) : T + shaped * (B - T)
   }
 
-  const advance = p.waveEdgeAdvance > 0 ? p.waveEdgeAdvance : 0
+  const advance = p.wAdv > 0 ? p.wAdv : 0
   if (advance > 0 && canonCols > 1) {
-    const cCol = (canonCols - 1) * 0.5
+    const cCol = (canonCols - 1) / 2
     // d: 0 at canonical-row center → 1 at canonical-row edges.
     const d = cCol > 0 ? Math.abs(col - cCol) / cCol : 0
-    const falloff = p.waveEdgeFalloff > 0 ? p.waveEdgeFalloff : 1
+    const falloff = p.wFall > 0 ? p.wFall : 1
     const shaped = falloff === 1 ? d : Math.pow(d, falloff)
     base -= advance * shaped
   }
@@ -316,46 +237,47 @@ function getYWaveSwapSecondWithParams(minuteIndex, swap, p) {
 }
 
 function getSwapCycleIndex(secondInMinute, swap) {
-  const cpm = swap && swap.swapCyclesPerMinute > 0 ? swap.swapCyclesPerMinute : 1
+  const cpm = swap && swap.cycPm > 0 ? swap.cycPm : 1
   const cycle = CYCLE_SECONDS / cpm
   const sec = ((secondInMinute % CYCLE_SECONDS) + CYCLE_SECONDS) % CYCLE_SECONDS
   return Math.floor(sec / cycle) % cpm
 }
 
 function resolveCycleWaveParams(secondInMinute, swap) {
-  const cycleParams = swap && Array.isArray(swap.yWaveCycleParams) ? swap.yWaveCycleParams : null
+  const cycleParams = swap && Array.isArray(swap.ywPrm) ? swap.ywPrm : null
   const idx = getSwapCycleIndex(secondInMinute, swap)
-  if (DEBUG_LOG_SWAP_CYCLE && _lastLoggedSwapCycle !== idx) {
-    const cpm = swap && swap.swapCyclesPerMinute > 0 ? swap.swapCyclesPerMinute : 1
-    console.log('[clockHullRenderer] active swap cycle', {
-      cycleIndex: idx,
-      cycleHuman: idx + 1,
-      swapCyclesPerMinute: cpm,
-      secondInMinute
-    })
-    _lastLoggedSwapCycle = idx
-  }
+  // if (DEBUG_LOG_SWAP_CYCLE && _lastLoggedSwapCycle !== idx) {
+    // const cpm = swap && swap.cycPm > 0 ? swap.cycPm : 1
+    // console.log('[clockHullRenderer] active swap cycle', {
+    //   cycleIndex: idx,
+    //   cycleHuman: idx + 1,
+    //   cycPm: cpm,
+    //   secondInMinute
+    // })
+    // _lastLoggedSwapCycle = idx
+  // }
   const per = cycleParams && cycleParams.length > 0 ? cycleParams[idx % cycleParams.length] : null
   return {
-    waveTopSecond: per && per.waveTopSecond != null ? per.waveTopSecond : swap.waveTopSecond,
-    waveBottomSecond: per && per.waveBottomSecond != null ? per.waveBottomSecond : swap.waveBottomSecond,
-    waveShoalExponent: per && per.waveShoalExponent != null ? per.waveShoalExponent : swap.waveShoalExponent,
-    waveEdgeAdvance: per && per.waveEdgeAdvance != null ? per.waveEdgeAdvance : swap.waveEdgeAdvance,
-    waveEdgeFalloff: per && per.waveEdgeFalloff != null ? per.waveEdgeFalloff : swap.waveEdgeFalloff,
-    waveRippleEnabled: per && per.waveRippleEnabled != null ? per.waveRippleEnabled : swap.waveRippleEnabled,
-    waveUniformCrossSecond: per && per.waveUniformCrossSecond != null ? per.waveUniformCrossSecond : swap.waveUniformCrossSecond
+    wTop: per && per.wTop != null ? per.wTop : swap.wTop,
+    wBot: per && per.wBot != null ? per.wBot : swap.wBot,
+    wShoal: per && per.wShoal != null ? per.wShoal : swap.wShoal,
+    wAdv: per && per.wAdv != null ? per.wAdv : swap.wAdv,
+    wFall: per && per.wFall != null ? per.wFall : swap.wFall,
+    wRip: per && per.wRip != null ? per.wRip : swap.wRip
   }
 }
 
-// Y-wave staggered timing per cell, unless `swap.waveRippleEnabled === false`.
+function yWaveUniformCrossSecond(p) {
+  const T = p.wTop != null ? p.wTop : 10
+  const B = p.wBot != null ? p.wBot : 18
+  return 0.5 * (T + B)
+}
+
+// Y-wave staggered timing per cell, unless `swap.wRip === false`.
 export function getSwapCrossSecond(minuteIndex, gridRow, gridRowCount, swap, secondInMinute = 0) {
   const p = resolveCycleWaveParams(secondInMinute, swap)
-  if (p.waveRippleEnabled === false) {
-    const u = p.waveUniformCrossSecond
-    if (u != null && Number.isFinite(u)) return u
-    const T = p.waveTopSecond != null ? p.waveTopSecond : 10
-    const B = p.waveBottomSecond != null ? p.waveBottomSecond : 18
-    return (T + B) * 0.5
+  if (p.wRip === false) {
+    return yWaveUniformCrossSecond(p)
   }
   return getYWaveSwapSecondWithParams(minuteIndex, swap, p)
 }
@@ -365,9 +287,9 @@ export function getSwapCrossSecond(minuteIndex, gridRow, gridRowCount, swap, sec
 const _phaseOut = { t: 0, direction: 1 }
 
 // Computes { t, direction } for the current second inside one swap cycle:
-//   direction = +1 during the ramp-up (outer heading toward innerColor) and
+//   direction = +1 during the ramp-up (outer heading toward colIn) and
 //               during the held-at-1 plateau.
-//   direction = -1 during the ramp-down (outer heading back toward outerColor).
+//   direction = -1 during the ramp-down (outer heading back toward colOut).
 // Callers that only need t can use getCrossWindowProgress below.
 // `cycleSeconds` defaults to the full minute (60s), so a single swap event
 // per minute. Shorter cycles (e.g. 30s for two cycles per minute) make the
@@ -403,15 +325,15 @@ export function getCrossWindowPhase(secondInMinute, crossSecond, lead, lag, cycl
   return _phaseOut
 }
 
-export function getCrossWindowProgress(secondInMinute, crossSecond, lead, lag, cycleSeconds) {
-  return getCrossWindowPhase(secondInMinute, crossSecond, lead, lag, cycleSeconds).t
-}
+// export function getCrossWindowProgress(secondInMinute, crossSecond, lead, lag, cycleSeconds) {
+//   return getCrossWindowPhase(secondInMinute, crossSecond, lead, lag, cycleSeconds).t
+// }
 
-// Helper: resolves `swap.swapCyclesPerMinute` (≥1) into an effective cycle
+// Helper: resolves `swap.cycPm` (≥1) into an effective cycle
 // length in seconds. Kept as a single call site so the on-chain port has one
 // obvious line to mirror.
 function resolveSwapCycleSeconds(swap) {
-  const cpm = swap && swap.swapCyclesPerMinute > 0 ? swap.swapCyclesPerMinute : 1
+  const cpm = swap && swap.cycPm > 0 ? swap.cycPm : 1
   return CYCLE_SECONDS / cpm
 }
 
@@ -421,14 +343,14 @@ function selectChromaticNudges(swap, shape, toInner) {
   if (!swap) return null
   let primary
   if (shape === 'outer') {
-    primary = toInner ? swap.outerChromaticNudgesToInner : swap.outerChromaticNudgesToOuter
+    primary = toInner ? swap.nOi : swap.nOo
   } else {
-    primary = toInner ? swap.innerChromaticNudgesToInner : swap.innerChromaticNudgesToOuter
+    primary = toInner ? swap.nIi : swap.nIo
   }
   if (primary && primary.length > 0) return primary
-  const legacyDir = toInner ? swap.chromaticNudgesToInner : swap.chromaticNudgesToOuter
+  const legacyDir = toInner ? swap.nLegI : swap.nLegO
   if (legacyDir && legacyDir.length > 0) return legacyDir
-  const legacyFlat = swap.chromaticNudges
+  const legacyFlat = swap.nLeg
   if (legacyFlat && legacyFlat.length > 0) return legacyFlat
   return null
 }
@@ -449,7 +371,8 @@ function applyChromaticNudges(base, nudges, p) {
     const n = nudges[i]
     const center = n.t
     if (center == null) continue
-    const width = n.width > 0 ? n.width : 0.06
+    const wRaw = n.wid != null ? n.wid : n.width
+    const width = wRaw > 0 ? wRaw : 0.06
     const dist = Math.abs(pc - center)
     let w = 0
     if (dist < width) {
@@ -458,7 +381,8 @@ function applyChromaticNudges(base, nudges, p) {
       w = 1
     }
     if (w <= 0) continue
-    const gain = (n.strength != null ? n.strength : 1) * w
+    const strRaw = n.str != null ? n.str : n.strength
+    const gain = (strRaw != null ? strRaw : 1) * w
     const delta = n.delta || n
     dr += gain * (delta.dr != null ? delta.dr : (delta.r != null ? delta.r : 0))
     dg += gain * (delta.dg != null ? delta.dg : (delta.g != null ? delta.g : 0))
@@ -472,16 +396,17 @@ function applyChromaticNudges(base, nudges, p) {
 
 const _tokenNudgeOut = { r: 0, g: 0, b: 0 }
 function applyTokenGlobalNudge(base, minuteIndex, swap) {
-  const s = swap && swap.chromaticGlobalNudgeStart
-  const e = swap && swap.chromaticGlobalNudgeEnd
-  if (!s && !e) {
+  const s = swap && swap.gNs
+  const m = swap && swap.gNm
+  const e = swap && swap.gNe
+  if (!s && !m && !e) {
     _tokenNudgeOut.r = base.r
     _tokenNudgeOut.g = base.g
     _tokenNudgeOut.b = base.b
     return _tokenNudgeOut
   }
-  const maxIdx = swap && swap.chromaticGlobalNudgeMaxIndex > 0
-    ? swap.chromaticGlobalNudgeMaxIndex
+  const maxIdx = swap && swap.gNmax > 0
+    ? swap.gNmax
     : 1440
   const t = clamp((minuteIndex | 0) / maxIdx, 0, 1)
   const sdr = s && s.dr != null ? s.dr : (s && s.r != null ? s.r : 0)
@@ -490,18 +415,33 @@ function applyTokenGlobalNudge(base, minuteIndex, swap) {
   const edr = e && e.dr != null ? e.dr : (e && e.r != null ? e.r : 0)
   const edg = e && e.dg != null ? e.dg : (e && e.g != null ? e.g : 0)
   const edb = e && e.db != null ? e.db : (e && e.b != null ? e.b : 0)
-  const dr = lerp(sdr, edr, t)
-  const dg = lerp(sdg, edg, t)
-  const db = lerp(sdb, edb, t)
+  let dr
+  let dg
+  let db
+  if (m) {
+    const mdr = m.dr != null ? m.dr : (m.r != null ? m.r : 0)
+    const mdg = m.dg != null ? m.dg : (m.g != null ? m.g : 0)
+    const mdb = m.db != null ? m.db : (m.b != null ? m.b : 0)
+    if (t <= 0.5) {
+      const u = t * 2
+      dr = lerp(sdr, mdr, u)
+      dg = lerp(sdg, mdg, u)
+      db = lerp(sdb, mdb, u)
+    } else {
+      const u = (t - 0.5) * 2
+      dr = lerp(mdr, edr, u)
+      dg = lerp(mdg, edg, u)
+      db = lerp(mdb, edb, u)
+    }
+  } else {
+    dr = lerp(sdr, edr, t)
+    dg = lerp(sdg, edg, t)
+    db = lerp(sdb, edb, t)
+  }
   _tokenNudgeOut.r = clamp(base.r + dr, 0, 255)
   _tokenNudgeOut.g = clamp(base.g + dg, 0, 255)
   _tokenNudgeOut.b = clamp(base.b + db, 0, 255)
   return _tokenNudgeOut
-}
-
-function rgbFromStop(s) {
-  if (!s) return { r: 0, g: 0, b: 0 }
-  return { r: s.r | 0, g: s.g | 0, b: s.b | 0 }
 }
 
 function lerpRgb(a, b, t) {
@@ -513,132 +453,27 @@ function lerpRgb(a, b, t) {
   }
 }
 
-/** Canonical (col, row) for minuteIndex — same indexing as getYWaveSwapSecond. */
-export function getCanonicalColRow(minuteIndex, swap) {
-  const canonCols = swap && swap.waveCanonicalCols > 0 ? swap.waveCanonicalCols | 0 : 24
-  const canonRows = swap && swap.waveCanonicalRows > 0 ? swap.waveCanonicalRows | 0 : 60
-  const total = canonCols * canonRows
-  const idx = (((minuteIndex | 0) % total) + total) % total
-  return {
-    col: idx % canonCols,
-    row: (idx / canonCols) | 0,
-    canonCols,
-    canonRows
-  }
-}
-
-function sampleStops1d(stops, t) {
-  const n = stops.length
-  if (n === 0) return { r: 0, g: 0, b: 0 }
-  if (n === 1) return rgbFromStop(stops[0])
-  const tt = clamp(t, 0, 1) * (n - 1)
-  const i0 = tt | 0
-  const i1 = i0 + 1 < n ? i0 + 1 : n - 1
-  const f = tt - i0
-  return lerpRgb(rgbFromStop(stops[i0]), rgbFromStop(stops[i1]), f)
-}
-
-/**
- * RGB from `swap.chromaticGradientStops` using **canonical row only** (Y):
- * v = row / (rows−1), row 0 = top. Column is ignored.
- */
-export function sampleChromaticGradientColor(minuteIndex, swap) {
-  const stops = swap && swap.chromaticGradientStops
-  if (!stops || stops.length < 2) return { r: 0, g: 0, b: 0 }
-  const { row, canonRows } = getCanonicalColRow(minuteIndex, swap)
-  const v = canonRows > 1 ? row / (canonRows - 1) : 0
-  return sampleStops1d(stops, v)
-}
-
-// Pulls base RGB toward the per-cell gradient sample through a single tent in
-// local progress (replaces manual chromatic nudges when gradient mode is on).
-const _gradPeakOut = { r: 0, g: 0, b: 0 }
-function applyGradientChromaticPeak(base, minuteIndex, swap, localP) {
-  const stops = swap.chromaticGradientStops
-  if (!stops || stops.length < 2) {
-    _gradPeakOut.r = base.r
-    _gradPeakOut.g = base.g
-    _gradPeakOut.b = base.b
-    return _gradPeakOut
-  }
-  const g = sampleChromaticGradientColor(minuteIndex, swap)
-  const center = swap.chromaticGradientPeakT != null ? swap.chromaticGradientPeakT : 0.42
-  const width = swap.chromaticGradientPeakWidth > 0 ? swap.chromaticGradientPeakWidth : 0.4
-  const pc = localP < 0 ? 0 : (localP > 1 ? 1 : localP)
-  const dist = Math.abs(pc - center)
-  let tent = 0
-  if (width > 1e-9 && dist < width) {
-    tent = 1 - dist / width
-  } else if (width <= 1e-9 && dist <= 1e-9) {
-    tent = 1
-  }
-  const strength = swap.chromaticGradientStrength != null ? swap.chromaticGradientStrength : 1
-  const k = clamp(tent * strength, 0, 1)
-  _gradPeakOut.r = clamp(lerp(base.r, g.r, k), 0, 255)
-  _gradPeakOut.g = clamp(lerp(base.g, g.g, k), 0, 255)
-  _gradPeakOut.b = clamp(lerp(base.b, g.b, k), 0, 255)
-  return _gradPeakOut
-}
-
-/**
- * @param {null|{ shape: 'outer'|'inner', innerTowardOuter?: boolean }} chromaOpts
- *   Required for `chromaticNudgeSource === 'combo'`: inner sets `innerTowardOuter`
- *   true when the inner hull is on its I→O leg (toward outerColor).
- */
-function applyChromaticPost(base, minuteIndex, swap, localP, manualNudges, chromaOpts = null) {
-  const mode = (swap && swap.chromaticNudgeSource) || 'manual'
-  let useGradient = mode === 'gradient'
-  if (mode === 'combo' && chromaOpts) {
-    if (chromaOpts.shape === 'outer') {
-      useGradient = false
-    } else if (chromaOpts.shape === 'inner') {
-      useGradient = !!chromaOpts.innerTowardOuter
-    } else {
-      useGradient = false
-    }
-  }
-  const chroma = useGradient
-    ? applyGradientChromaticPeak(base, minuteIndex, swap, localP)
-    : applyChromaticNudges(base, manualNudges, localP)
+function applyChromaticPost(base, minuteIndex, swap, localP, manualNudges) {
+  const chroma = applyChromaticNudges(base, manualNudges, localP)
   return applyTokenGlobalNudge(chroma, minuteIndex, swap)
 }
 
 // Returns { outerR,outerG,outerB, innerR,innerG,innerB } as integers 0..255.
 // `minuteIndex` is consulted for y-wave canonical row/column mapping.
 //
-// Each shape lerps between its phase endpoints; chromatic nudges (when
-// configured) sit on top of that base lerp. Local progress `t` for nudges
-// is per-shape along its own leg (0 = start of leg, 1 = end).
-// Multiplier in [1 - handShadeDepth, 1] keyed off the cell's minute-hand
-// direction. `axis === 'horizontal'` pivots the bright/dark poles to 3/9
-// o'clock; default 'vertical' keeps them at 12/6. Returns 1 (no effect) when
-// handShadeDepth is 0 or unset.
-export function getHandShadeFactor(secondInMinute, minuteIndex, swap) {
-  const depth = swap && swap.handShadeDepth > 0 ? swap.handShadeDepth : 0
-  if (depth <= 0) return 1
-  const minutePhase = (((minuteIndex | 0) % 720) + 720) % 720
-  const mm = minutePhase % 60
-  const minuteTurns = (mm + secondInMinute / 60) / 60
-  // `axis` picks which orthogonal component of the hand unit-vector we read.
-  // cos(2π·turn) peaks at turn=0 (12 o'clock); sin(2π·turn) peaks at turn=¼
-  // (3 o'clock). Both outputs live in [-1, 1].
-  const angle = 2 * PI * minuteTurns
-  const raw = swap && swap.handShadeAxis === 'horizontal' ? Math.sin(angle) : Math.cos(angle)
-  const unit = 0.5 * (1 + raw) // [0, 1]; 1 at the bright pole, 0 at the dark pole.
-  return 1 - depth * (1 - unit)
-}
+// In `swap` mode both shapes lerp between their phase endpoints with manual
+// chromatic nudges on each leg. In `inner-fade` mode only the inner animates.
+// Nudge `t` values are each shape's local progress along its own leg (0→1).
 
-// Resolves chroma lists and local progress for both shapes.
-// Used by computeSwapColors and inner spatial-gradient fill.
-function resolveSwapColorBranches(secondInMinute, minuteIndex, gridRow, gridRowCount, swap) {
+// Local progress and chromatic nudge lists for outer + inner (swap or inner-fade).
+function resolveSwapColorLegs(secondInMinute, minuteIndex, gridRow, gridRowCount, swap) {
   const crossSecond = getSwapCrossSecond(minuteIndex, gridRow, gridRowCount, swap, secondInMinute)
   const cycle = resolveSwapCycleSeconds(swap)
-  const phase = getCrossWindowPhase(secondInMinute, crossSecond, swap.swapLead, swap.swapLag, cycle)
+  const phase = getCrossWindowPhase(secondInMinute, crossSecond, swap.xLead, swap.xLag, cycle)
   const t = phase.t
   const direction = phase.direction
-  const O = swap.outerColor
-  const I = swap.innerColor
-
+  const O = swap.colOut
+  const I = swap.colIn
   let outerStart, outerEnd, outerNudges
   let innerStart, innerEnd, innerNudges, localP
   if (direction < 0) {
@@ -654,148 +489,49 @@ function resolveSwapColorBranches(secondInMinute, minuteIndex, gridRow, gridRowC
     innerStart = I; innerEnd = O
     innerNudges = selectChromaticNudges(swap, 'inner', false)
   }
-
-  const innerFade = swap.swapBehavior === 'inner-fade'
-  const innerTowardOuter = direction >= 0
-  const outerChromaOpts = { shape: 'outer' }
-  const innerChromaOpts = { shape: 'inner', innerTowardOuter }
-
+  const innerFade = swap && swap.xBeh === 'inner-fade'
   return {
     innerFade,
-    localP,
-    direction,
     O,
     I,
+    localP,
     outerStart,
     outerEnd,
     outerNudges,
-    outerChromaOpts,
     innerStart,
     innerEnd,
-    innerNudges,
-    innerChromaOpts
+    innerNudges
   }
 }
 
-function innerSpatialChromaticWantsGradient(swap, innerNudges, innerChromaOpts) {
-  if (!swap || swap.innerSpatialChromaticGradient === false) return false
-  const mode = swap.chromaticNudgeSource || 'manual'
-  if (mode === 'gradient') return true
-  if (mode === 'combo') return true
-  return !!(innerNudges && innerNudges.length)
-}
-
-// Each entry: u = position along the hull [0,1], p = local progress for chroma
-// (fixed to the nudge / band identity). When chase ≠ 0, u = fract(p + chase) so
-// stops slide; color always uses p so peaks do not cross-fade in place.
-function buildInnerSpatialGradientStops(swap, innerNudges, chase) {
-  const mode = (swap && swap.chromaticNudgeSource) || 'manual'
-  const out = []
-  const moving = chase !== 0 && chase != null && Number.isFinite(chase)
-  const pos = (p) => (moving ? fract01(p + chase) : p)
-
-  out.push({ u: 0, p: 0 })
-  if (mode === 'manual' && innerNudges && innerNudges.length) {
-    for (let i = 0; i < innerNudges.length; i++) {
-      const n = innerNudges[i]
-      if (n.t == null) continue
-      const p0 = n.t < 0 ? 0 : (n.t > 1 ? 1 : n.t)
-      out.push({ u: pos(p0), p: p0 })
-    }
-  } else {
-    for (let s = 1; s < 8; s++) {
-      const p0 = s / 8
-      out.push({ u: pos(p0), p: p0 })
-    }
-  }
-  out.push({ u: 1, p: 1 })
-  out.sort((a, b) => (a.u !== b.u ? a.u - b.u : a.p - b.p))
-  return out
-}
-
-/**
- * Horizontal linear gradient for the inner hull. Each stop uses a fixed chromatic
- * sample `p` (nudge time / band center); spatial position `u` is `p`, or when
- * chase is active `fract(p + chase)` so stops move along the hull (swap-cycle
- * phase from `innerSpatialChromaticChasePerMinute`).
- * @param minuteIndexForPhase minute index used with gridRow for swap timing (y-wave
- *   row batching passes the row anchor, e.g. r * cols).
- * @param minuteIndexForChroma optional; per-cell index for gradient chroma + hand
- *   shade + hull area (defaults to minuteIndexForPhase).
- */
-function createInnerSpatialGradient(
-  ctx, x, y, w, h,
-  params,
-  swap, secondInMinute, minuteIndexForPhase, gridRow, gridRowCount,
-  branches,
-  minuteIndexForChroma = null
-) {
-  const b = branches || resolveSwapColorBranches(
-    secondInMinute, minuteIndexForPhase, gridRow, gridRowCount, swap
-  )
-  if (!innerSpatialChromaticWantsGradient(swap, b.innerNudges, b.innerChromaOpts)) return null
-
-  const innerBaseFixed = lerpRgb(b.innerStart, b.innerEnd, b.localP)
-  const miC = minuteIndexForChroma != null ? minuteIndexForChroma : minuteIndexForPhase
-  const shade = getHandShadeFactor(secondInMinute, miC, swap)
-  const yMid = y + h * 0.5
-  const g = ctx.createLinearGradient(x, yMid, x + w, yMid)
-
-  const cpm = swap && swap.innerSpatialChromaticChasePerMinute
-  let chase = 0
-  if (cpm != null && cpm !== 0 && Number.isFinite(cpm)) {
-    const cycleSec = resolveSwapCycleSeconds(swap)
-    const secInCycle = ((secondInMinute % cycleSec) + cycleSec) % cycleSec
-    chase = fract01((secInCycle / cycleSec) * cpm)
-  }
-
-  const stopsArr = buildInnerSpatialGradientStops(swap, b.innerNudges, chase)
-  const miHull = minuteIndexForChroma != null ? minuteIndexForChroma : minuteIndexForPhase
-  const lumK = getInnerHullLightnessMul(params, secondInMinute, miHull, swap)
-  let lastU = -1
-  for (let i = 0; i < stopsArr.length; i++) {
-    let u = stopsArr[i].u
-    if (u <= lastU) u = Math.min(1, lastU + 1e-4)
-    lastU = u
-    const c = applyChromaticPost(
-      innerBaseFixed, miC, swap, stopsArr[i].p, b.innerNudges, b.innerChromaOpts
-    )
-    const r = clamp(Math.round(c.r * shade * lumK), 0, 255)
-    const gg = clamp(Math.round(c.g * shade * lumK), 0, 255)
-    const bb = clamp(Math.round(c.b * shade * lumK), 0, 255)
-    g.addColorStop(u, `rgb(${r},${gg},${bb})`)
-  }
-  return g
-}
-
-export function computeSwapColors(secondInMinute, minuteIndex, gridRow, gridRowCount, swap, params = null) {
-  const b = resolveSwapColorBranches(secondInMinute, minuteIndex, gridRow, gridRowCount, swap)
-  const { innerFade, localP, O, I, outerStart, outerEnd, outerNudges, outerChromaOpts,
-    innerStart, innerEnd, innerNudges, innerChromaOpts } = b
-
+export function computeSwapColors(secondInMinute, minuteIndex, gridRow, gridRowCount, swap, _params = null) {
+  void _params
+  const b = resolveSwapColorLegs(secondInMinute, minuteIndex, gridRow, gridRowCount, swap)
   let oR, oG, oB
-  if (innerFade) {
-    oR = O.r; oG = O.g; oB = O.b
+  if (b.innerFade) {
+    oR = b.O.r | 0
+    oG = b.O.g | 0
+    oB = b.O.b | 0
   } else {
-    const outerBase = lerpRgb(outerStart, outerEnd, localP)
+    const outerBase = lerpRgb(b.outerStart, b.outerEnd, b.localP)
     const outer = applyChromaticPost(
-      outerBase, minuteIndex, swap, localP, outerNudges, outerChromaOpts
+      outerBase, minuteIndex, swap, b.localP, b.outerNudges
     )
-    oR = outer.r; oG = outer.g; oB = outer.b
+    oR = outer.r
+    oG = outer.g
+    oB = outer.b
   }
-  const innerBase = lerpRgb(innerStart, innerEnd, localP)
+  const innerBase = lerpRgb(b.innerStart, b.innerEnd, b.localP)
   const inner = applyChromaticPost(
-    innerBase, minuteIndex, swap, localP, innerNudges, innerChromaOpts
+    innerBase, minuteIndex, swap, b.localP, b.innerNudges
   )
-  const shade = getHandShadeFactor(secondInMinute, minuteIndex, swap)
-  const lumK = params ? getInnerHullLightnessMul(params, secondInMinute, minuteIndex, swap) : 1
   return {
     outerR: oR | 0,
     outerG: oG | 0,
     outerB: oB | 0,
-    innerR: clamp(Math.round(inner.r * shade * lumK), 0, 255),
-    innerG: clamp(Math.round(inner.g * shade * lumK), 0, 255),
-    innerB: clamp(Math.round(inner.b * shade * lumK), 0, 255)
+    innerR: clamp(Math.round(inner.r), 0, 255),
+    innerG: clamp(Math.round(inner.g), 0, 255),
+    innerB: clamp(Math.round(inner.b), 0, 255)
   }
 }
 
@@ -867,10 +603,10 @@ function emitCapsule(k, ax, ay, bx, by, radius) {
   return k
 }
 
-function emitHand(k, angleRad, len, tail, frameReach, handRadius, handReach) {
+function emitHand(k, angleRad, len, tail, frameReach, handRadius, hdReach) {
   const dx = Math.cos(angleRad)
   const dy = Math.sin(angleRad)
-  const forward = BASE_RADIUS * handReach * len
+  const forward = BASE_RADIUS * hdReach * len
   const backward = forward * tail
   const ax = -dx * backward
   const ay = -dy * backward
@@ -929,24 +665,13 @@ function computeHull(n) {
   return k - 1
 }
 
-// Signed area × 0.5; hull winding from monotone chain is consistent → use abs.
-function polygonAreaAbs(n) {
-  if (n < 3) return 0
-  let s = 0
-  for (let i = 0; i < n; i++) {
-    const j = (i + 1) % n
-    s += _hxs[i] * _hys[j] - _hxs[j] * _hys[i]
-  }
-  return Math.abs(s) * 0.5
-}
-
 // -------- hand angles --------
 
-function computeHandAngles(minuteIndex, secondInMinute, includeSecond) {
+function computeHandAngles(minuteIndex, secondInMinute, useSec) {
   const minutePhase = ((minuteIndex % 720) + 720) % 720
   const hh = (minutePhase / 60) | 0
   const mm = minutePhase % 60
-  const s = includeSecond ? secondInMinute : 0
+  const s = useSec ? secondInMinute : 0
   const hourTurns = (hh + mm / 60 + s / 3600) / 12
   const minuteTurns = (mm + s / 60) / 60
   const secondTurns = s / 60
@@ -957,145 +682,18 @@ function computeHandAngles(minuteIndex, secondInMinute, includeSecond) {
   }
 }
 
-function smallestAngleBetweenDirections(a, b) {
-  let d = Math.abs(a - b)
-  if (d > PI) d = 2 * PI - d
-  return d
-}
-
-// Inner RGB multiplier: minute & second hands same direction → light; opposite → dark.
-function getInnerHandProximityLightnessMul(params, secondInMinute, minuteIndex, swap) {
-  if (!swap || swap.innerHandProximityLightness !== true || !params) return 1
-  if (!params.includeSecond) return 1
-  const ang = computeHandAngles(minuteIndex, secondInMinute, true)
-  const d = smallestAngleBetweenDirections(ang.minute, ang.second)
-  const t = clamp(d / PI, 0, 1)
-  const lightM =
-    swap.handProximityLightMultiplier != null ? swap.handProximityLightMultiplier : 1.48
-  const darkM =
-    swap.handProximityDarkMultiplier != null ? swap.handProximityDarkMultiplier : 0.26
-  return lerp(lightM, darkM, t)
-}
-
 // -------- hull building (into _hxs/_hys) --------
 
 function buildHullPoints(params, secondInMinute, minuteIndex) {
-  const ang = computeHandAngles(minuteIndex, secondInMinute, params.includeSecond)
-  const r = params.handWidth * 0.5
+  const ang = computeHandAngles(minuteIndex, secondInMinute, params.useSec)
+  const r = params.hdW / 2
   let k = 0
-  k = emitHand(k, ang.hour, params.hourLength, params.hourTail, params.frameHourReach, r, params.handReach)
-  k = emitHand(k, ang.minute, params.minuteLength, params.minuteTail, params.frameMinuteReach, r, params.handReach)
-  if (params.includeSecond) {
-    k = emitHand(k, ang.second, params.secondLength, params.secondTail, params.frameSecondReach, r, params.handReach)
+  k = emitHand(k, ang.hour, params.hLen, params.hTail, params.frHr, r, params.hdReach)
+  k = emitHand(k, ang.minute, params.mLen, params.mTail, params.frMr, r, params.hdReach)
+  if (params.useSec) {
+    k = emitHand(k, ang.second, params.sLen, params.sTail, params.frSr, r, params.hdReach)
   }
   return computeHull(k)
-}
-
-function getHullModelArea(params, secondInMinute, minuteIndex) {
-  const n = buildHullPoints(params, secondInMinute, minuteIndex)
-  return polygonAreaAbs(n)
-}
-
-// Cache: hullParamsKey + minuteIndex → { min, max } model-space area over one minute (s∈[0,60)).
-const _minuteHullAreaRange = new Map()
-let _hullAreaWarmKey = ''
-
-function hullParamsCacheKey(params) {
-  if (!params) return ''
-  return [
-    params.hourLength,
-    params.minuteLength,
-    params.secondLength,
-    params.hourTail,
-    params.minuteTail,
-    params.secondTail,
-    params.handReach,
-    params.frameHourReach,
-    params.frameMinuteReach,
-    params.frameSecondReach,
-    params.shapeScale,
-    params.handWidth,
-    params.includeSecond
-  ].join(',')
-}
-
-function ensureMinuteHullAreaRangeCached(params, minuteIndex) {
-  const pk = hullParamsCacheKey(params)
-  // Hull geometry follows `minuteIndex % 720` in `computeHandAngles`; range is per that phase.
-  const phase = (((minuteIndex | 0) % 720) + 720) % 720
-  const key = `${pk}|${phase}`
-  let b = _minuteHullAreaRange.get(key)
-  if (b) return b
-  let mn = Infinity
-  let mx = -Infinity
-  for (let s = 0; s < 60; s++) {
-    const a = getHullModelArea(params, s, phase)
-    if (a < mn) mn = a
-    if (a > mx) mx = a
-  }
-  if (!(mx > mn + 1e-9)) {
-    mn = Math.max(0, mn - 1e-3)
-    mx = mn + 1e-3
-  }
-  b = { min: mn, max: mx }
-  _minuteHullAreaRange.set(key, b)
-  return b
-}
-
-function warmupHullAreaRangeCache(params, minuteCount) {
-  if (!params) return
-  const pk = hullParamsCacheKey(params)
-  const flag = `${pk}|${minuteCount | 0}`
-  if (_hullAreaWarmKey === flag) return
-  _hullAreaWarmKey = flag
-  const n = Math.max(0, Math.min(minuteCount | 0, 1440))
-  for (let mi = 0; mi < n; mi++) {
-    ensureMinuteHullAreaRangeCached(params, mi)
-  }
-}
-
-// Multiplier on inner RGB: >1 toward light when hull is tight, <1 toward dark when spread.
-// Range is per minuteIndex (that token's own min/max area over the second hand sweep).
-// Plateau at 1 in the middle so chromatic / spatial gradient read as today.
-function getInnerHullAreaLightnessMul(params, secondInMinute, minuteIndex, swap) {
-  if (!swap || swap.innerAreaLuminanceMod === false || !params) return 1
-  const A = getHullModelArea(params, secondInMinute, minuteIndex)
-  let amin
-  let amax
-  if (
-    swap.innerAreaModelMin != null &&
-    swap.innerAreaModelMax != null &&
-    swap.innerAreaModelMax > swap.innerAreaModelMin + 1e-9
-  ) {
-    amin = swap.innerAreaModelMin
-    amax = swap.innerAreaModelMax
-  } else {
-    const b = ensureMinuteHullAreaRangeCached(params, minuteIndex)
-    amin = b.min
-    amax = b.max
-  }
-  if (!(amax > amin + 1e-9)) return 1
-  const t = clamp((A - amin) / (amax - amin), 0, 1)
-  const edge = swap.innerAreaBlendEdge != null ? clamp(swap.innerAreaBlendEdge, 0.02, 0.45) : 0.14
-  const lightM = swap.innerAreaLightMultiplier != null ? swap.innerAreaLightMultiplier : 1.42
-  const darkM = swap.innerAreaDarkMultiplier != null ? swap.innerAreaDarkMultiplier : 0.24
-  if (t < edge) {
-    const u = edge > 1e-9 ? t / edge : 1
-    return lerp(lightM, 1, u)
-  }
-  if (t > 1 - edge) {
-    const u = edge > 1e-9 ? (t - (1 - edge)) / edge : 1
-    return lerp(1, darkM, u)
-  }
-  return 1
-}
-
-function getInnerHullLightnessMul(params, secondInMinute, minuteIndex, swap) {
-  if (!swap || !params) return 1
-  if (swap.innerHandProximityLightness === true) {
-    return getInnerHandProximityLightnessMul(params, secondInMinute, minuteIndex, swap)
-  }
-  return getInnerHullAreaLightnessMul(params, secondInMinute, minuteIndex, swap)
 }
 
 // -------- canvas drawing primitives --------
@@ -1106,9 +704,9 @@ function appendHullSubpath(ctx, x, y, w, h, params, secondInMinute, minuteIndex)
   const hullLen = buildHullPoints(params, secondInMinute, minuteIndex)
   if (hullLen < 3) return
 
-  const scale = params.shapeScale
-  const cx = x + w * 0.5
-  const cy = y + h * 0.5
+  const scale = params.scl
+  const cx = x + w / 2
+  const cy = y + h / 2
   const sx = w / 100
   const sy = h / 100
 
@@ -1120,32 +718,26 @@ function appendHullSubpath(ctx, x, y, w, h, params, secondInMinute, minuteIndex)
 }
 
 // Draws a single piece: outer rect + hull.
-// Pass `options.skipBackground` to skip the outer fill (e.g. shapes-only overlays).
+// Pass `options.skipBg` to skip the outer fill (e.g. shapes-only overlays).
 export function drawPiece(
   ctx, bounds, params, swap, secondInMinute, minuteIndex, gridRow, gridRowCount,
   options = null
 ) {
-  const skipBackground = !!(options && options.skipBackground)
+  const skipBg = !!(options && (options.skipBg || options.skipBackground))
   const c = computeSwapColors(secondInMinute, minuteIndex, gridRow, gridRowCount, swap, params)
-  const b = resolveSwapColorBranches(secondInMinute, minuteIndex, gridRow, gridRowCount, swap)
 
-  if (!skipBackground) {
+  if (!skipBg) {
     ctx.fillStyle = `rgb(${c.outerR},${c.outerG},${c.outerB})`
     ctx.fillRect(bounds.x, bounds.y, bounds.w, bounds.h)
   }
 
-  const innerGrad = createInnerSpatialGradient(
-    ctx, bounds.x, bounds.y, bounds.w, bounds.h,
-    params,
-    swap, secondInMinute, minuteIndex, gridRow, gridRowCount, b, minuteIndex
-  )
-  ctx.fillStyle = innerGrad || `rgb(${c.innerR},${c.innerG},${c.innerB})`
+  ctx.fillStyle = `rgb(${c.innerR},${c.innerG},${c.innerB})`
   ctx.beginPath()
   appendHullSubpath(ctx, bounds.x, bounds.y, bounds.w, bounds.h, params, secondInMinute, minuteIndex)
   ctx.fill()
 }
 
-  // Grid renderer. Two code paths:
+// Grid renderer. Two code paths:
 //   y-wave (default): all cells in a row share the same (outer, inner)
 //     colors, so we paint the whole row as one fillRect and union all inner
 //     hull subpaths into a single fill call. ~120 draw calls/frame for a 24x60.
@@ -1165,13 +757,9 @@ export function drawGrid(
   activeIndex = -1,
   options = null
 ) {
-  const skipBackground = !!(options && options.skipBackground)
+  const skipBg = !!(options && (options.skipBg || options.skipBackground))
   const cellW = canvasW / cols
   const cellH = canvasH / rows
-
-  if (swap && swap.innerAreaLuminanceMod !== false) {
-    warmupHullAreaRangeCache(params, Math.min(cols * rows, 1440))
-  }
 
   // Y-wave timing is derived from the canonical (col, row) of each cell's
   // minuteIndex, so any cell in a live row can land on a different canonical
@@ -1183,16 +771,15 @@ export function drawGrid(
   const yWaveNeedsPerCell =
     swap &&
     (
-      swap.waveEdgeAdvance > 0 ||
-      swap.handShadeDepth > 0 ||
-      cols !== (swap.waveCanonicalCols | 0) ||
-      rows !== (swap.waveCanonicalRows | 0)
+      swap.wAdv > 0 ||
+      cols !== (swap.wCols | 0) ||
+      rows !== (swap.wRows | 0)
     )
   if (swap && yWaveNeedsPerCell) {
     drawGridPerCell(
       ctx, canvasW, canvasH, cols, rows, cellW, cellH,
       params, swap,
-      secondInMinute, activeIndex, skipBackground
+      secondInMinute, activeIndex, skipBg
     )
     return
   }
@@ -1203,53 +790,24 @@ export function drawGrid(
     const outerStyle = `rgb(${c.outerR},${c.outerG},${c.outerB})`
     const innerStyle = `rgb(${c.innerR},${c.innerG},${c.innerB})`
     const yTop = r * cellH
-    const bRow = resolveSwapColorBranches(secondInMinute, rowAnchor, r, rows, swap)
-    const useInnerSpatial = innerSpatialChromaticWantsGradient(swap, bRow.innerNudges, bRow.innerChromaOpts)
-    const useAreaMod = swap && swap.innerAreaLuminanceMod !== false
 
-    if (!skipBackground) {
+    if (!skipBg) {
       ctx.fillStyle = outerStyle
       ctx.fillRect(0, yTop, canvasW, cellH)
     }
 
-    if (useInnerSpatial) {
-      for (let col = 0; col < cols; col++) {
-        const xTop = col * cellW
-        const index = rowAnchor + col
-        const g = createInnerSpatialGradient(
-          ctx, xTop, yTop, cellW, cellH,
-          params,
-          swap, secondInMinute, rowAnchor, r, rows, bRow, index
-        )
-        ctx.fillStyle = g || innerStyle
-        ctx.beginPath()
-        appendHullSubpath(ctx, xTop, yTop, cellW, cellH, params, secondInMinute, index)
-        ctx.fill()
-      }
-    } else if (useAreaMod) {
-      for (let col = 0; col < cols; col++) {
-        const xTop = col * cellW
-        const index = rowAnchor + col
-        const ci = computeSwapColors(secondInMinute, index, r, rows, swap, params)
-        ctx.fillStyle = `rgb(${ci.innerR},${ci.innerG},${ci.innerB})`
-        ctx.beginPath()
-        appendHullSubpath(ctx, xTop, yTop, cellW, cellH, params, secondInMinute, index)
-        ctx.fill()
-      }
-    } else {
-      ctx.fillStyle = innerStyle
-      ctx.beginPath()
-      for (let col = 0; col < cols; col++) {
-        const index = rowAnchor + col
-        appendHullSubpath(ctx, col * cellW, yTop, cellW, cellH, params, secondInMinute, index)
-      }
-      ctx.fill()
+    ctx.fillStyle = innerStyle
+    ctx.beginPath()
+    for (let col = 0; col < cols; col++) {
+      const index = rowAnchor + col
+      appendHullSubpath(ctx, col * cellW, yTop, cellW, cellH, params, secondInMinute, index)
     }
+    ctx.fill()
   }
 
   drawActiveCell(
     ctx, cols, rows, cellW, cellH, params, swap, secondInMinute, activeIndex,
-    skipBackground
+    skipBg
   )
 }
 
@@ -1260,12 +818,9 @@ export function drawGrid(
 function drawGridPerCell(
   ctx, canvasW, canvasH, cols, rows, cellW, cellH,
   params, swap,
-  secondInMinute, activeIndex, skipBackground
+  secondInMinute, activeIndex, skipBg
 ) {
   const N = cols * rows
-  if (swap && swap.innerAreaLuminanceMod !== false) {
-    warmupHullAreaRangeCache(params, Math.min(N, 1440))
-  }
   ensureRippleBuffers(N)
   const outerR = _rippleOuterR
   const outerG = _rippleOuterG
@@ -1284,7 +839,7 @@ function drawGridPerCell(
   // Pass 1: outer fills. We hold fillStyle between identical
   // colors by tracking the last-emitted RGB. Skipped when the caller only
   // wants the shapes layer.
-  if (!skipBackground) {
+  if (!skipBg) {
     let lastR = -1, lastG = -1, lastB = -1
     for (let r = 0; r < rows; r++) {
       const yTop = r * cellH
@@ -1303,34 +858,16 @@ function drawGridPerCell(
 
   
 
-  // Pass 2: inner hulls — per-cell spatial gradient when chroma calls for it,
-  // otherwise bucket by solid inner RGB (same as y-wave batch path).
+  // Pass 2: inner hulls — bucket by solid inner RGB (same as y-wave batch path).
   const solidBuckets = new Map()
   for (let i = 0; i < N; i++) {
-    const r = (i / cols) | 0
-    const col = i % cols
-    const xTop = col * cellW
-    const yTop = r * cellH
-    const b = resolveSwapColorBranches(secondInMinute, i, r, rows, swap)
-    const g = createInnerSpatialGradient(
-      ctx, xTop, yTop, cellW, cellH,
-      params,
-      swap, secondInMinute, i, r, rows, b, i
-    )
-    if (g) {
-      ctx.fillStyle = g
-      ctx.beginPath()
-      appendHullSubpath(ctx, xTop, yTop, cellW, cellH, params, secondInMinute, i)
-      ctx.fill()
-    } else {
-      const key = (innerR[i] << 16) | (innerG[i] << 8) | innerB[i]
-      let bucket = solidBuckets.get(key)
-      if (!bucket) {
-        bucket = []
-        solidBuckets.set(key, bucket)
-      }
-      bucket.push(i)
+    const key = (innerR[i] << 16) | (innerG[i] << 8) | innerB[i]
+    let bucket = solidBuckets.get(key)
+    if (!bucket) {
+      bucket = []
+      solidBuckets.set(key, bucket)
     }
+    bucket.push(i)
   }
 
   for (const [key, indices] of solidBuckets) {
@@ -1350,13 +887,13 @@ function drawGridPerCell(
 
   drawActiveCell(
     ctx, cols, rows, cellW, cellH, params, swap, secondInMinute, activeIndex,
-    skipBackground
+    skipBg
   )
 }
 
 function drawActiveCell(
   ctx, cols, rows, cellW, cellH, params, swap, secondInMinute, activeIndex,
-  skipBackground = false
+  skipBg = false
 ) {
   if (activeIndex < 0 || activeIndex >= cols * rows) return
   const ar = (activeIndex / cols) | 0
@@ -1366,18 +903,12 @@ function drawActiveCell(
   const innerStyle = `rgb(${c.innerR},${c.innerG},${c.innerB})`
   const xTop = ac * cellW
   const yTop = ar * cellH
-  const bAct = resolveSwapColorBranches(secondInMinute, activeIndex, ar, rows, swap)
-  const innerBgGrad = createInnerSpatialGradient(
-    ctx, xTop, yTop, cellW, cellH,
-    params,
-    swap, secondInMinute, activeIndex, ar, rows, bAct, activeIndex
-  )
 
   // Invert the active cell: paint the cell's inner color as the background,
   // then redraw the hull using the cell's outer color. Background is skipped
   // when the caller only wants the shapes layer.
-  if (!skipBackground) {
-    ctx.fillStyle = innerBgGrad || innerStyle
+  if (!skipBg) {
+    ctx.fillStyle = innerStyle
     ctx.fillRect(xTop, yTop, cellW, cellH)
   }
   ctx.fillStyle = outerStyle
@@ -1387,31 +918,31 @@ function drawActiveCell(
 }
 
 // -------- responsive grid layout --------
-// Enumerates every (cols, rows) pair whose product equals totalSquares
+// Enumerates every (cols, rows) pair whose product equals totSq
 // (default 1440 = minutes-per-day) and picks the one whose aspect ratio is
 // closest to the viewport's, subject to optional min/max bounds on either axis.
 // Aspect distance is measured in log-space so 2:1 and 1:2 are equally far from
 // 1:1, avoiding a bias toward wide layouts.
 export function pickResponsiveGrid({
-  viewportW,
-  viewportH,
-  totalSquares = 1440,
-  minCols = 1,
-  maxCols = totalSquares,
-  minRows = 1,
-  maxRows = totalSquares,
+  vw,
+  vh,
+  totSq = 1440,
+  minC = 1,
+  maxC = totSq,
+  minR = 1,
+  maxR = totSq,
   fallback = { cols: 24, rows: 60 }
 } = {}) {
-  const w = Math.max(1, viewportW | 0)
-  const h = Math.max(1, viewportH | 0)
+  const w = Math.max(1, vw | 0)
+  const h = Math.max(1, vh | 0)
   const targetLogAspect = Math.log(w / h)
 
   let best = null
-  for (let c = 1; c <= totalSquares; c++) {
-    if (totalSquares % c !== 0) continue
-    const r = totalSquares / c
-    if (c < minCols || c > maxCols) continue
-    if (r < minRows || r > maxRows) continue
+  for (let c = 1; c <= totSq; c++) {
+    if (totSq % c !== 0) continue
+    const r = totSq / c
+    if (c < minC || c > maxC) continue
+    if (r < minR || r > maxR) continue
     const score = Math.abs(Math.log(c / r) - targetLogAspect)
     if (best === null || score < best.score) best = { cols: c, rows: r, score }
   }
@@ -1421,10 +952,10 @@ export function pickResponsiveGrid({
 
 // -------- time helpers (convenient for both live view and embedded use) --------
 
-export function getMinuteIndexFromDate(date, totalSquares) {
+export function getMinuteIndexFromDate(date, totSq) {
   const daySeconds = date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds() + date.getMilliseconds() / 1000
   const progress = daySeconds / (24 * 3600)
-  return Math.floor(progress * totalSquares) % totalSquares
+  return Math.floor(progress * totSq) % totSq
 }
 
 export function getSecondInMinuteFromDate(date) {

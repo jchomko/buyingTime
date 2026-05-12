@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Buying Time Embed Preview</title>
+    <title>Buying Time — Grid (local time)</title>
     <style>
       html, body {
         margin: 0;
@@ -12,7 +12,6 @@
         overflow: hidden;
         background: #000;
         color: #fff;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
 
       #app {
@@ -20,7 +19,7 @@
         inset: 0;
       }
 
-      #preview-canvas {
+      #grid-canvas {
         position: absolute;
         inset: 0;
         width: 100%;
@@ -31,20 +30,19 @@
   </head>
   <body>
     <div id="app">
-      <canvas id="preview-canvas"></canvas>
+      <canvas id="grid-canvas"></canvas>
     </div>
 
     <script type="module">
-      import { mountSingleClock } from '/src/render/clockHullMount.js'
-      import { DEFAULT_SWAP_PARAMS, getSecondInMinuteFromDate } from '/src/render/clockHullRenderer.js'
-      import { TOTAL_SQUARES, normalizeMinuteIndex, resolveGridDims } from '/src/timeGrid.js'
+      import { mountClockGrid } from '/src/render/clockHullMount.js'
+      import {
+        DEFAULT_SWAP_PARAMS,
+        getMinuteIndexFromDate,
+        getSecondInMinuteFromDate
+      } from '/src/render/clockHullRenderer.js'
+      import { TOTAL_SQUARES, resolveGridDims } from '/src/timeGrid.js'
 
-      const params = new URLSearchParams(window.location.search)
-      const tokenIdRaw = Number(params.get('tokenId') ?? 0)
-      const tokenId = Number.isFinite(tokenIdRaw) ? Math.max(0, Math.floor(tokenIdRaw)) : 0
-      const selectedMinute = normalizeMinuteIndex(tokenId % TOTAL_SQUARES)
-
-      const canvas = document.getElementById('preview-canvas')
+      const canvas = document.getElementById('grid-canvas')
 
       const dimsRef = { current: resolveGridDims(window.innerWidth, window.innerHeight) }
       const updateDims = () => {
@@ -59,13 +57,12 @@
         wRip: true
       }
 
-      const handle = mountSingleClock(canvas, {
-        getMinuteIndex: () => selectedMinute,
+      const handle = mountClockGrid(canvas, {
+        getGridDims: (w, h) => resolveGridDims(Math.max(1, w), Math.max(1, h)),
         getSecondInMinute: () => getSecondInMinuteFromDate(new Date()),
-        getGridRow: () => Math.floor(selectedMinute / dimsRef.current.cols),
-        gridRowCount: () => dimsRef.current.rows,
+        getActiveIndex: () => getMinuteIndexFromDate(new Date(), TOTAL_SQUARES),
         swapParams,
-        targetFps: 60
+        targetFps: 30
       })
 
       window.addEventListener('beforeunload', () => {

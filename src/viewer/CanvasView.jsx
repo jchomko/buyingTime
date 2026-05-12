@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { mountSingleClock, mountClockGrid } from '../render/clockHullMount.js'
 import {
   DEFAULT_SWAP_PARAMS,
-  SWAP_CHROMA_LAB_EXPERIMENTAL,
   getMinuteIndexFromDate,
   getSecondInMinuteFromDate
 } from '../render/clockHullRenderer.js'
@@ -12,11 +11,8 @@ export function CanvasView({
   mode,
   showFps,
   selectedIndex,
-  fadeMode,
   gridLayoutMode,
   waveRippleEnabled,
-  /** 'manual' | 'gradient' | 'combo' | 'lab' — lab = manual nudges + SWAP_CHROMA_LAB_EXPERIMENTAL. */
-  chromaticNudgeSource,
   getSoldMinuteIndices,
   /** Square mode: click left half → −1, right half → +1 (minute index). */
   onSquareHalfStep,
@@ -32,30 +28,14 @@ export function CanvasView({
     `${FALLBACK_DIMS.cols}×${FALLBACK_DIMS.rows}`
   )
 
-  const swapParams = useMemo(() => {
-    const base = {
+  const swapParams = useMemo(
+    () => ({
       ...DEFAULT_SWAP_PARAMS,
       mode: 'y-wave',
-      swapBehavior: fadeMode,
-      waveRippleEnabled
-    }
-    const src = chromaticNudgeSource || 'manual'
-    if (src === 'lab') {
-      base.chromaticNudgeSource = 'manual'
-      Object.assign(base, SWAP_CHROMA_LAB_EXPERIMENTAL)
-    } else {
-      base.chromaticNudgeSource = src
-      base.innerSpatialChromaticGradient = false
-      base.innerSpatialChromaticChasePerMinute = 0
-      base.innerAreaLuminanceMod = false
-      base.innerHandProximityLightness = false
-    }
-    if (fadeMode === 'inner-fade') {
-      base.outerColor = { r: 255, g: 255, b: 255 }
-      base.innerColor = { r: 0, g: 0, b: 0 }
-    }
-    return base
-  }, [fadeMode, waveRippleEnabled, chromaticNudgeSource])
+      wRip: waveRippleEnabled
+    }),
+    [waveRippleEnabled]
+  )
 
   const resolveLiveDims = (w, h) => {
     if (gridLayoutMode === 'viewport-stretch') return FALLBACK_DIMS
@@ -106,7 +86,8 @@ export function CanvasView({
         rows: FALLBACK_DIMS.rows,
         getSecondInMinute: getSec,
         getActiveIndex: getMinuteIndex,
-        getSoldMinuteIndices,
+        getSoldMinuteIndices:
+          mode === 'gallery' ? getSoldMinuteIndices : undefined,
         swapParams,
         targetFps: 30
       })
@@ -129,7 +110,13 @@ export function CanvasView({
       ro.disconnect()
       handle.dispose()
     }
-  }, [mode, selectedIndex, swapParams, gridLayoutMode, getSoldMinuteIndices])
+  }, [
+    mode,
+    selectedIndex,
+    swapParams,
+    gridLayoutMode,
+    mode === 'gallery' ? getSoldMinuteIndices : null
+  ])
 
   const handleClick = (e) => {
     if (mode === 'square') {

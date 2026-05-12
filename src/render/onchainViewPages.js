@@ -70,7 +70,7 @@ function drawPurchasedGridCanvas(ctx, canvas, {
   const purchased = new Set((purchasedTokenIds || []).map((v) => ((v % safeTotal) + safeTotal) % safeTotal))
 
   // Global backdrop.
-  ctx.fillStyle = `rgb(${swapParams.outerColor.r},${swapParams.outerColor.g},${swapParams.outerColor.b})`
+  ctx.fillStyle = `rgb(${swapParams.colOut.r},${swapParams.colOut.g},${swapParams.colOut.b})`
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
   if (showMissing) {
@@ -180,7 +180,6 @@ export function initPurchasedGridPage() {
     purchasedIds: document.getElementById('purchasedIds'),
     rpcUrl: document.getElementById('rpcUrl'),
     contractAddress: document.getElementById('contractAddress'),
-    fetchStrategy: document.getElementById('fetchStrategy'),
     soldCount: document.getElementById('soldCount'),
     randomizeBtn: document.getElementById('randomizeBtn'),
     fetchBtn: document.getElementById('fetchBtn'),
@@ -227,11 +226,7 @@ export function initPurchasedGridPage() {
     }
     els.status.textContent = 'Fetching purchased token ids from contract...'
     try {
-      const ids = await readPurchasedTokenIds({
-        rpcUrl,
-        contractAddress,
-        strategy: els.fetchStrategy.value
-      })
+      const ids = await readPurchasedTokenIds({ rpcUrl, contractAddress })
       els.purchasedIds.value = ids.join(', ')
       els.status.textContent = `Loaded ${ids.length} purchased token ids.`
       render()

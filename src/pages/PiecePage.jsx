@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   useChainId,
   useReadContract,
@@ -8,7 +8,10 @@ import {
   useWriteContract
 } from 'wagmi'
 import { ViewerBrand } from '../components/ViewerBrand.jsx'
-import { readTokenOwnerDisplay } from '../lib/readPurchasedTokenIds.js'
+import {
+  readTokenOwner,
+  readTokenOwnerDisplay
+} from '../lib/readPurchasedTokenIds.js'
 import { useWallet } from '../context/useWallet.js'
 import { getMinuteIndexFromDate } from '../render/clockHullRenderer.js'
 import { CanvasView } from '../viewer/CanvasView.jsx'
@@ -30,6 +33,12 @@ function useNow(intervalMs = 1000) {
 
 const PIECE_MINUTE_KEY = 'pieceSelectedMinute'
 const INFO_THEME_KEY = 'pieceInfoTheme'
+
+function isAlreadyMintedContractError(err) {
+  const s = `${err?.shortMessage || ''} ${err?.message || ''} ${err?.cause?.message || ''}`.toLowerCase()
+  return s.includes('already minted')
+}
+
 const BUYING_TIME_WRITE_ABI = [
   {
     type: 'function',
@@ -117,20 +126,15 @@ export default function PiecePage() {
   }, [now, selectedIndex])
 
   const [showFps, setShowFps] = useState(false)
-  const [fadeMode, setFadeMode] = useState('swap')
   const [gridLayoutMode, setGridLayoutMode] = useState('factor-fit')
   const [chromeHidden, setChromeHidden] = useState(true)
   const [waveRippleEnabled, setWaveRippleEnabled] = useState(true)
-  const [chromaticNudgeSource, setChromaticNudgeSource] = useState('manual')
-
-  useEffect(() => {
-    if (chromaticNudgeSource === 'lab') setWaveRippleEnabled(false)
-  }, [chromaticNudgeSource])
 
   const ownerByTokenRef = useRef(new Map())
   const [workOwnerLine, setWorkOwnerLine] = useState('')
   const [mintTxHash, setMintTxHash] = useState(null)
   const [mintError, setMintError] = useState('')
+  const alreadyMintedDialogRef = useRef(null)
   const {
     walletAccount,
     walletBusy,
@@ -139,8 +143,7 @@ export default function PiecePage() {
     contractAddress,
     connectWallet,
     disconnectWallet,
-    refreshSold,
-    getSoldMinuteIndices
+    refreshSold
   } = useWallet()
 
   useEffect(() => {
@@ -270,6 +273,18 @@ export default function PiecePage() {
     await connectWallet()
   }, [connectWallet])
 
+  const syncOwnerAndSoldAfterMintedSlot = useCallback(
+    (idx) => {
+      return refreshSold()
+        .then(() => resolveOwnerDisplay(idx))
+        .then((ownerLabel) => {
+          ownerByTokenRef.current.set(idx, ownerLabel)
+          setWorkOwnerLine(formatOwnerDisplay(ownerLabel))
+        })
+    },
+    [refreshSold, resolveOwnerDisplay]
+  )
+
   const handleMintClick = useCallback(async () => {
     setMintError('')
     if (!walletAccount) {
@@ -280,11 +295,24 @@ export default function PiecePage() {
       setMintError('Set VITE_CONTRACT_ADDRESS before minting.')
       return
     }
+    const idx = normalizeMinuteIndex(displayMinuteIndex)
     try {
       if (chainId !== expectedChainId) {
         await switchChainAsync({ chainId: expectedChainId })
       }
-      const tokenId = BigInt(normalizeMinuteIndex(displayMinuteIndex))
+      if (rpcUrl && contractAddress) {
+        const ownerAddr = await readTokenOwner({
+          rpcUrl,
+          contractAddress,
+          tokenId: idx
+        })
+        if (ownerAddr) {
+          syncOwnerAndSoldAfterMintedSlot(idx).catch(() => {})
+          alreadyMintedDialogRef.current?.showModal()
+          return
+        }
+      }
+      const tokenId = BigInt(idx)
       const txHash = await writeContractAsync({
         address: contractAddress,
         abi: BUYING_TIME_WRITE_ABI,
@@ -295,17 +323,24 @@ export default function PiecePage() {
       })
       setMintTxHash(txHash)
     } catch (err) {
+      if (isAlreadyMintedContractError(err)) {
+        syncOwnerAndSoldAfterMintedSlot(idx).catch(() => {})
+        alreadyMintedDialogRef.current?.showModal()
+        return
+      }
       setMintError(err?.shortMessage || err?.message || String(err))
     }
   }, [
     walletAccount,
     contractAddress,
+    rpcUrl,
     chainId,
     expectedChainId,
     switchChainAsync,
     writeContractAsync,
     pricePerPiece,
-    displayMinuteIndex
+    displayMinuteIndex,
+    syncOwnerAndSoldAfterMintedSlot
   ])
 
   const ownerDisplay =
@@ -357,8 +392,32 @@ export default function PiecePage() {
     }
   }, [])
 
+  const triedMinuteLabel = formatWorkTime(normalizeMinuteIndex(displayMinuteIndex))
+
   return (
     <main className="site-shell site-shell--fullscreen">
+      <dialog ref={alreadyMintedDialogRef} className="mint-blocked-dialog">
+        <h2 className="mint-blocked-dialog__title mono">Already minted</h2>
+        <p className="mint-blocked-dialog__body">
+          <span className="mono">{triedMinuteLabel}</span>
+          {' '}
+          is not available. Another wallet may have minted it first, or your sold list was out of date.
+        </p>
+        <div className="mint-blocked-dialog__actions">
+          <form method="dialog">
+            <button type="submit" className="toggle-button">
+              OK
+            </button>
+          </form>
+          <Link
+            to="/gallery"
+            className="toggle-button toolbar-page-link"
+            onClick={() => alreadyMintedDialogRef.current?.close()}
+          >
+            Open gallery
+          </Link>
+        </div>
+      </dialog>
       <section className="hero-section">
       
         {!chromeHidden && (
@@ -374,38 +433,16 @@ export default function PiecePage() {
                 <span>FPS</span>
               </label>
               <label className="fps-toggle">
-                <span>Fade</span>
-                <select
-                  className="toggle-select"
-                  value={fadeMode}
-                  onChange={(e) => setFadeMode(e.target.value)}
-                >
-                  <option value="swap">Swap</option>
-                  <option value="inner-fade">Inner fade</option>
-                </select>
-              </label>
-              <label className="fps-toggle" title={chromaticNudgeSource === 'lab' ? 'Lab uses a uniform wave (no Y ripple).' : undefined}>
                 <input
                   type="checkbox"
                   checked={waveRippleEnabled}
-                  disabled={chromaticNudgeSource === 'lab'}
                   onChange={(e) => setWaveRippleEnabled(e.target.checked)}
                 />
                 <span>Ripple</span>
               </label>
-              <label className="fps-toggle">
-                <span>Chroma</span>
-                <select
-                  className="toggle-select"
-                  value={chromaticNudgeSource}
-                  onChange={(e) => setChromaticNudgeSource(e.target.value)}
-                >
-                  <option value="manual">Manual nudges</option>
-                  <option value="gradient">Gradient peak</option>
-                  <option value="combo">Combo (inner split)</option>
-                  <option value="lab">Lab (spatial + hand proximity)</option>
-                </select>
-              </label>
+              <Link to="/day" className="toggle-button toolbar-page-link">
+                Live day
+              </Link>
               {!isLive && (
                 <button type="button" className="toggle-button" onClick={goNow}>
                   Now
@@ -459,11 +496,8 @@ export default function PiecePage() {
               mode="square"
               showFps={showFps}
               selectedIndex={selectedIndex}
-              fadeMode={fadeMode}
               gridLayoutMode="factor-fit"
               waveRippleEnabled={waveRippleEnabled}
-              chromaticNudgeSource={chromaticNudgeSource}
-              getSoldMinuteIndices={getSoldMinuteIndices}
               onSquareHalfStep={undefined}
               onCanvasClick={goGallery}
               onGridCellClick={undefined}

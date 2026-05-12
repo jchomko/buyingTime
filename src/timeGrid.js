@@ -3,19 +3,19 @@ import { pickResponsiveGrid } from './render/clockHullRenderer.js'
 export const TOTAL_SQUARES = 1440
 
 export const GRID_BOUNDS = {
-  minCols: 12,
-  maxCols: 72,
-  minRows: 20,
-  maxRows: 90
+  minC: 12,
+  maxC: 72,
+  minR: 20,
+  maxR: 90
 }
 
 export const FALLBACK_DIMS = { cols: 24, rows: 60 }
 
 export function resolveGridDims(w, h) {
   return pickResponsiveGrid({
-    viewportW: w,
-    viewportH: h,
-    totalSquares: TOTAL_SQUARES,
+    vw: w,
+    vh: h,
+    totSq: TOTAL_SQUARES,
     ...GRID_BOUNDS,
     fallback: FALLBACK_DIMS
   })

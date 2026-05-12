@@ -21,15 +21,9 @@ export default function GalleryPage() {
   const navigate = useNavigate()
   const [selectedIndex, setSelectedIndex] = useState(readStoredPieceMinute)
   const [showFps, setShowFps] = useState(false)
-  const [fadeMode, setFadeMode] = useState('swap')
   const [gridLayoutMode, setGridLayoutMode] = useState('factor-fit')
   const [chromeHidden, setChromeHidden] = useState(true)
   const [waveRippleEnabled, setWaveRippleEnabled] = useState(true)
-  const [chromaticNudgeSource, setChromaticNudgeSource] = useState('manual')
-
-  useEffect(() => {
-    if (chromaticNudgeSource === 'lab') setWaveRippleEnabled(false)
-  }, [chromaticNudgeSource])
 
   const {
     walletAccount,
@@ -88,39 +82,13 @@ export default function GalleryPage() {
                 <span>FPS</span>
               </label>
               <label className="fps-toggle">
-                <span>Fade</span>
-                <select
-                  className="toggle-select"
-                  value={fadeMode}
-                  onChange={(e) => setFadeMode(e.target.value)}
-                >
-                  <option value="swap">Swap</option>
-                  <option value="inner-fade">Inner fade</option>
-                </select>
-              </label>
-              <label className="fps-toggle" title={chromaticNudgeSource === 'lab' ? 'Lab uses a uniform wave (no Y ripple).' : undefined}>
                 <input
                   type="checkbox"
                   checked={waveRippleEnabled}
-                  disabled={chromaticNudgeSource === 'lab'}
                   onChange={(e) => setWaveRippleEnabled(e.target.checked)}
                 />
                 <span>Ripple</span>
               </label>
-              <label className="fps-toggle">
-                <span>Chroma</span>
-                <select
-                  className="toggle-select"
-                  value={chromaticNudgeSource}
-                  onChange={(e) => setChromaticNudgeSource(e.target.value)}
-                >
-                  <option value="manual">Manual nudges</option>
-                  <option value="gradient">Gradient peak</option>
-                  <option value="combo">Combo (inner split)</option>
-                  <option value="lab">Lab (spatial + hand proximity)</option>
-                </select>
-              </label>
-             
               {walletAccount ? (
                 <>
                   <span className="wallet-pill mono" title={walletAccount}>
@@ -154,10 +122,8 @@ export default function GalleryPage() {
             mode="gallery"
             showFps={showFps}
             selectedIndex={selectedIndex}
-            fadeMode={fadeMode}
             gridLayoutMode={gridLayoutMode}
             waveRippleEnabled={waveRippleEnabled}
-            chromaticNudgeSource={chromaticNudgeSource}
             getSoldMinuteIndices={getSoldMinuteIndices}
             onCanvasClick={undefined}
             onGridCellClick={handleCellClick}

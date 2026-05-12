@@ -9,32 +9,22 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const root = path.resolve(__dirname, "..")
 
-const inputPath = path.join(root, "public", "embed-preview.html")
+const inputPath = path.join(root, "public", "embed-day-preview.html")
 const outDir = path.join(root, "public", "generated")
-const minHtmlPath = path.join(outDir, "embed-preview.inline.min.html")
+const minHtmlPath = path.join(outDir, "embed-day-preview.inline.min.html")
 
 const html = await readFile(inputPath, "utf8")
 const moduleScriptMatch = html.match(/<script\s+type=["']module["']>([\s\S]*?)<\/script>/i)
 if (!moduleScriptMatch) {
-  throw new Error("Could not find <script type='module'> block in embed-preview.html")
+  throw new Error("Could not find <script type='module'> block in embed-day-preview.html")
 }
 
-const tokenBlockPattern =
-  /const params =[\s\S]*?const selectedMinute = normalizeMinuteIndex\(tokenId % TOTAL_SQUARES\)\n/
-const moduleSourceWithTokenPlaceholder = moduleScriptMatch[1].replace(
-  tokenBlockPattern,
-  `const tokenId = __TOKEN_ID__\nconst selectedMinute = normalizeMinuteIndex(tokenId % TOTAL_SQUARES)\n`
-)
-if (!moduleSourceWithTokenPlaceholder.includes("__TOKEN_ID__")) {
-  throw new Error("Token placeholder insertion failed before bundling.")
-}
-
-const normalizedImports = moduleSourceWithTokenPlaceholder.replaceAll("from '/src/", "from './src/")
+const normalizedImports = moduleScriptMatch[1].replaceAll("from '/src/", "from './src/")
 const bundleResult = await build({
   stdin: {
     contents: normalizedImports,
     resolveDir: root,
-    sourcefile: "embed-preview.entry.js",
+    sourcefile: "embed-day-preview.entry.js",
     loader: "js"
   },
   bundle: true,
@@ -45,10 +35,9 @@ const bundleResult = await build({
   target: ["es2020"]
 })
 let bundledJs = bundleResult.outputFiles[0].text
-// Second pass: Terser re-mangles / squeezes beyond esbuild alone (smaller on-chain chunks).
 const terserResult = await minifyJs(bundledJs, {
   compress: { ecma: 2020, passes: 2 },
-  mangle: { reserved: ["__TOKEN_ID__"] },
+  mangle: true,
   ecma: 2020,
   format: { comments: false }
 })
@@ -76,5 +65,5 @@ const minified = await minify(htmlWithInlineScript, {
 await mkdir(outDir, { recursive: true })
 await writeFile(minHtmlPath, `${minified}\n`, "utf8")
 
-console.log("Embed preview bundled + minified (esbuild + terser mangle/compress).")
+console.log("Embed day preview bundled + minified (esbuild + terser).")
 console.log(`- HTML: ${path.relative(root, minHtmlPath)}`)
