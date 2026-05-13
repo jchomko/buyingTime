@@ -5,23 +5,35 @@ export function ViewerBrand({
   navTo = '/gallery',
   navLabel = 'Gallery',
   brandTo = '/info',
-  onBrandClick
+  onBrandClick,
+  /** When false (default), “Buying Time” is static; the info route uses its own title link. */
+  brandAsLink = false
 }) {
+  const navOnClick = !brandAsLink ? onBrandClick : undefined
+
   return (
     <div
       className={`viewer-title-stack viewer-chrome-invert${
         chromeHidden ? ' viewer-title-stack--flush' : ''
       }`}
     >
+      {brandAsLink ? (
+        <NavLink
+          to={brandTo}
+          className="viewer-title viewer-title--link"
+          onClick={onBrandClick}
+        >
+          Buying Time
+        </NavLink>
+      ) : (
+        <span className="viewer-title">Buying Time</span>
+      )}
+
       <NavLink
-        to={brandTo}
-        className="viewer-title viewer-title--link"
-        onClick={onBrandClick}
+        to={navTo}
+        className="viewer-title viewer-title--link viewer-title--connect"
+        onClick={navOnClick}
       >
-        Buying Time
-      </NavLink>
-  
-      <NavLink to={navTo} className="viewer-title viewer-title--link viewer-title--connect">
         {navLabel}
       </NavLink>
     </div>

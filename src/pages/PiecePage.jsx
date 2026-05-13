@@ -487,8 +487,8 @@ export default function PiecePage() {
         <div className="viewer-frame">
           <ViewerBrand
             chromeHidden={chromeHidden}
-            navTo="/gallery"
-            navLabel="Gallery"
+            navTo="/info"
+            navLabel="About"
             onBrandClick={captureInfoTheme}
           />
           <div className="piece-viewport">

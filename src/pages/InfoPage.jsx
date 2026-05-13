@@ -27,6 +27,15 @@ export default function InfoPage() {
 
   return (
     <main className="site-shell info-shell" style={style}>
+      {/* <div className="viewer-title-stack viewer-chrome-invert">
+        <button
+          type="button"
+          className="viewer-title viewer-title--link viewer-title--connect"
+          onClick={() => navigate(-1)}
+        >
+          Close
+        </button>
+      </div> */}
       <section className="content-section content-section--info">
         <Container fluid className="px-0">
           <Row className="g-0">
@@ -43,7 +52,7 @@ export default function InfoPage() {
             <Col md={2} className="content-side-title">
               <h3 className="viewer-title">About</h3>
             </Col>
-            <Col md={9} className="content-main-copy">
+            <Col md={8} className="content-main-copy">
               <p>
                 Time is the animating force of computation. Artists focus effort over time to create works that show subjects in new light. 
                 Artists sell these creations to support their practice and enable the production of new work.
@@ -60,7 +69,7 @@ export default function InfoPage() {
             <Col md={2} className="content-side-title">
               <h3 className="viewer-title"></h3>
             </Col>
-            <Col md={9} className="content-main-copy">
+            <Col md={8} className="content-main-copy">
               <p>
               Buying Time is a series of 1440 works, each an abstraction of an analog clock moving through one minute of the day.
               The work can be viewed head-on in a <a href="/day" target="_blank"> 24 hour animation</a>, or in <a href="/gallery" target="_blank">parallel</a> where a pattern emerges from the individual animations. 
@@ -74,7 +83,7 @@ export default function InfoPage() {
             <Col md={2} className="content-side-title">
               <h3 className="viewer-title">Background</h3>
             </Col>
-            <Col md={9} className="content-main-copy">
+            <Col md={8} className="content-main-copy">
               <p>
               Buying Time continues a series of works that explore <a href="https://proofofwork.jonathanchomko.com" target="_blank">market valuation</a>, <a href="https://constant.jonathanchomko.com" target="_blank">collective production</a> and <a href="https://aestheticconstant.jonathanchomko.com/" target="_blank">visual abstraction</a>. My aim with this piece was to create a series  that offered multiple perspectives on the same dataset, the individual elements contributing to a larger collective composition. 
               </p>
@@ -88,9 +97,13 @@ export default function InfoPage() {
             <Col md={2} className="content-side-title">
               <h3 className="viewer-title">Wrapping</h3>
             </Col>
-            <Col md={9} className="content-main-copy">
+            <Col md={8} className="content-main-copy">
             <p className="">
-                Clock hands are extended on both sides of the axis of rotation, and wrapped in a hull. Some legibility remains - the longest sides are the indicator sides. 
+                Clock hands are extended on both sides of the axis of rotation, and wrapped in a hull. Some legibility remains - the longest sides are the indicator sides.{' '}
+                <a href="/clock" target="_blank" rel="noreferrer">
+                  Full screen
+                </a>
+                .
               </p>
             <div className="info-day-embed">
                 <div className="info-day-embed__frame">
