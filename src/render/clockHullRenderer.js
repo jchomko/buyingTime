@@ -10,15 +10,15 @@
 // whatever pixel bounds the caller supplies (warping the aspect as needed).
 
 export const DEFAULT_CLOCK_HULL_PARAMS = Object.freeze({
-  hLen: 0.9,
+  hLen: 1.0,
   mLen: 1.0,
   sLen: 1.0,
   hTail: 0.7,
   mTail: 0.8,
-  sTail: 0.8,
+  sTail: 0.9,
   hdReach: 1.0,
-  frHr: 1.9,
-  frMr: 2.0,
+  frHr: 1.87,
+  frMr: 1.93,
   frSr: 2.0,
   scl: 1.0,
   hdW: 1.0,
@@ -39,27 +39,42 @@ export const DEFAULT_CLOCK_HULL_PARAMS = Object.freeze({
 // The older `nLegI` / `nLegO` / `nLeg`
 // fields are accepted as fallbacks when a shape-specific list is absent.
 
+//sunrise 
 const NUDGE_PATH_BLACK_TO_WHITE = Object.freeze([
-  { dr: -20, dg: -20, db: 25 },
-  { dr: -10, dg: -14, db: 20 },
-  { dr: -3, dg: -5, db: -1 },
-  { dr: 13, dg: 4, db: 1 },
-  { dr: 8, dg: 1, db: 3 },
-  { dr: 4, dg: 1, db: 6 },
-  { dr: 2, dg: 0, db: 2 },
-  { dr: 0, dg: 0, db: 2 }
+  { dr: 0, dg: 0, db: 0 },
+  { dr: 0, dg: 0, db: 25 },
+  { dr: 0, dg: -4, db: 20 },
+  { dr: -3, dg: -1, db: -1 },
+  { dr: 5, dg: 1, db: -3 },
+  { dr: 12, dg: -4, db: -5 },
+  { dr: 19, dg: 3, db: -8 },
+  { dr: 20, dg: -3, db: -2 },
+  { dr: 25, dg: -10, db: -10 },
+  { dr: -25, dg: -22, db: -25 }
  
 ])
 
+
+//inner 
+const NUDGE_PATH_INNER = Object.freeze([
+  { dr: 0, dg: 0, db: 0},
+  { dr: 0, dg: 0, db: 15 },
+  { dr: 10, dg: 0, db: 15 },
+  { dr: 25, dg: 0, db: 1 },
+])
+//sunset
 const NUDGE_PATH_WHITE_TO_BLACK = Object.freeze([
-  { dr: 8, dg: -10, db: -10 },
-  { dr: 2, dg: 0, db: 2 },
-  { dr: 4, dg: 1, db: 6 },
-  { dr: 8, dg: 1, db: 3 },
-  { dr: 13, dg: 4, db: 1 },
-  { dr: 10, dg: 3, db: 8 },
-  { dr: 9, dg: -0, db: 15 },
-  { dr: 3, dg: 0, db: 25 }
+ 
+  // { dr: 25, dg: -20, db: -20 },
+  { dr: 0, dg: 0, db: 0},
+  // { dr: 0, dg: 0, db: 15 },
+  // { dr: 0, dg: 0, db: 2 },
+  // { dr: 1, dg: 0, db: 5 },
+  // { dr: 1, dg: 0, db: 8 },
+  // { dr: 8, dg: 0, db: 1 },
+  { dr: 0, dg: 0, db: 15 },
+  { dr: 0, dg: 0, db: 25 }
+
 ])
 
 
@@ -98,16 +113,16 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
 
   //inner white to black
   nIo: [ 
-    // { t: 0.8, dr: +0, dg: +4,  db: +12, width: 0.3, strength: 1.0 },
+    { t: 0.5, dr: +14, dg: +0,  db: +0, width: 0.2, strength: 1.0 },
     // { t: 0.6, dr: +0, dg: +8,  db: +8, width: 0.3, strength: 1.0 },
     // { t: 0.3, dr: +12, dg: +10, db: +0, width: 0.3, strength: 1.0 },
     // { t: 0.1, dr: +8, dg: +1, db: +0, width: 0.3, strength: 1.0 },
 
     //good one 
-    { t: 0.40, dr: +8, dg: +1,  db: +0, wid: 0.1, str: 1.0 },
-    { t: 0.42, dr: +4, dg: +8,  db: +0, wid: 0.1, str: 1.0 },
-    { t: 0.44, dr: +2, dg: +6, db: +6, wid: 0.1, str: 1.0 },
-    { t: 0.46, dr: +0, dg: +2, db: +8, wid: 0.1, str: 1.0 },
+    // { t: 0.40, dr: +8, dg: +1,  db: +0, wid: 0.1, str: 1.0 },
+    // { t: 0.42, dr: +4, dg: +8,  db: +0, wid: 0.1, str: 1.0 },
+    // { t: 0.44, dr: +2, dg: +6, db: +6, wid: 0.1, str: 1.0 },
+    // { t: 0.46, dr: +0, dg: +2, db: +8, wid: 0.1, str: 1.0 },
   ],
 
     // { t: 0.45, dr: +0, dg: +5,  db: +32, width: 0.1, strength: 1.0 },
@@ -121,10 +136,11 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
       //was +8 on blue
       // { t: 0.50, dr: +0, dg: +0,  db: +0, wid: 0.15, str: 0.5 },
    
-      { t: 0.0, dr: +0, dg: +3,  db: +2, width: 0.3, strength: 1.0 },
-      { t: 0.1, dr: +0, dg: +8,  db: +6, width: 0.3, strength: 1.0 },
-      { t: 0.3, dr: +8, dg: +3, db: +0, width: 0.3, strength: 1.0 },
-      { t: 0.6, dr: +6, dg: +1, db: +0, width: 0.3, strength: 1.0 },
+      // { t: 0.0, dr: +0, dg: +0,  db: +10, width: 0.1, strength: 1.0 },
+      // { t: 0.1, dr: +0, dg: +0,  db: +14, width: 0.1, strength: 1.0 },
+     { t: 0.5, dr: +0, dg: +0, db: +14, width: 0.2, strength: 1.0 },
+      // { t: 0.6, dr: +10, dg: +0, db: +0, width: 0.1, strength: 1.0 },
+
       // { t: 0.40, dr: +0, dg: +13,  db: +14, width: 0.1, strength: 1.0 },
       // { t: 0.45, dr: +0, dg: +10,  db: +20, width: 0.1, strength: 1.0 },
       // { t: 0.55, dr: +13, dg: +15, db: +0, width: 0.1, strength: 1.0 },
@@ -189,11 +205,13 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
   // If either is missing or has fewer than two points, `gN` is used for that
   // leg. The inner hull always uses `gN` (and the same gNMidHalf envelope).
   // When gNMidHalf > 0, the nudge strength is scaled by a tent in swap leg
-  // progress localP centered at 0.5 (full strength at the cross-fade midpoint,
-  // 0 at 0.5 ± gNMidHalf). Omit or set 0 to apply the full nudge at all times.
+  // progress localP: full strength at gNMidPeak (default 0.5), 0 at
+  // gNMidPeak ± gNMidHalf. Omit or set gNMidHalf to 0 for full nudge at all times.
   gNMidHalf: 0.0,
-  // gN: NUDGE_PATH_BLACK_TO_WHITE,
-  
+  gNMidPeak: 0.3,
+
+  //inner shape
+  gN: NUDGE_PATH_INNER,
   //black to white 
   gNBgOuterToInner: NUDGE_PATH_BLACK_TO_WHITE,
   //white to black
@@ -448,7 +466,9 @@ function globalNudgeMidEnvelope(localP, swap) {
   const half = swap && swap.gNMidHalf > 0 ? swap.gNMidHalf : 0
   if (half <= 0) return 1
   const p = localP == null ? 0 : clamp(localP, 0, 1)
-  return clamp(1 - Math.abs(p - 0.5) / half, 0, 1)
+  const peakRaw = swap && swap.gNMidPeak != null ? swap.gNMidPeak : 0.5
+  const peak = clamp(peakRaw, 0, 1)
+  return clamp(1 - Math.abs(p - peak) / half, 0, 1)
 }
 
 const _tokenNudgeOut = { r: 0, g: 0, b: 0 }
