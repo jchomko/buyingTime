@@ -41,23 +41,23 @@ export const DEFAULT_CLOCK_HULL_PARAMS = Object.freeze({
 
 //sunrise 
 const NUDGE_PATH_BLACK_TO_WHITE = Object.freeze([
-  { dr: 0, dg: 0, db: 0 },
+  // { dr: 0, dg: 0, db: 0 },
   { dr: 0, dg: 0, db: 25 },
-  { dr: 0, dg: -4, db: 20 },
-  { dr: -3, dg: -1, db: -1 },
-  { dr: 5, dg: 1, db: -3 },
-  { dr: 12, dg: -4, db: -5 },
-  { dr: 19, dg: 3, db: -8 },
-  { dr: 20, dg: -3, db: -2 },
-  { dr: 25, dg: -10, db: -10 },
-  { dr: -25, dg: -22, db: -25 }
+  { dr: 0, dg: 0, db: 20 },
+  { dr: 0, dg: 4, db: 10 },
+  { dr: 7, dg: 4, db: 4 },
+  { dr: 5, dg: 3, db: 1 },
+  { dr: 12, dg: 3, db: 8 },
+  { dr: 20, dg: 1, db: 2 },
+  { dr: 25, dg: 0, db: 12 },
+  // { dr: 0, dg: -22, db: -25 }
  
 ])
 
 
 //inner 
 const NUDGE_PATH_INNER = Object.freeze([
-  { dr: 0, dg: 0, db: 0},
+  { dr: -10, dg: -4, db: 25},
   { dr: 0, dg: 0, db: 15 },
   { dr: 10, dg: 0, db: 15 },
   { dr: 25, dg: 0, db: 1 },
@@ -208,7 +208,7 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
   // progress localP: full strength at gNMidPeak (default 0.5), 0 at
   // gNMidPeak ± gNMidHalf. Omit or set gNMidHalf to 0 for full nudge at all times.
   gNMidHalf: 0.0,
-  gNMidPeak: 0.3,
+  gNMidPeak: 0.7,
 
   //inner shape
   gN: NUDGE_PATH_INNER,

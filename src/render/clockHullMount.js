@@ -50,8 +50,6 @@ function drawSoldMinuteMarkers(ctx, canvasW, canvasH, cols, rows, soldSet) {
   const dotR = Math.max(1.25, Math.min(cellW, cellH) * 0.055)
   ctx.save()
   ctx.fillStyle = 'rgba(252, 83, 83, 0.68)'
-  // ctx.strokeStyle = 'rgba(24, 24, 24, 0.45)'
-  // ctx.lineWidth = Math.max(0.5, dotR * 0.10)
   for (let i = 0; i < N; i++) {
     if (!soldSet.has(i)) continue
     const row = (i / cols) | 0
@@ -61,8 +59,6 @@ function drawSoldMinuteMarkers(ctx, canvasW, canvasH, cols, rows, soldSet) {
     ctx.beginPath()
     ctx.arc(cx, cy, dotR, 0, Math.PI * 2)
     ctx.fill()
-    
-    // ctx.stroke()
   }
   ctx.restore()
 }
