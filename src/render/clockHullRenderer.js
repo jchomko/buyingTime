@@ -38,6 +38,32 @@ export const DEFAULT_CLOCK_HULL_PARAMS = Object.freeze({
 //   nIi / nIo
 // The older `nLegI` / `nLegO` / `nLeg`
 // fields are accepted as fallbacks when a shape-specific list is absent.
+
+const NUDGE_PATH_BLACK_TO_WHITE = Object.freeze([
+  { dr: -20, dg: -20, db: 25 },
+  { dr: -10, dg: -14, db: 20 },
+  { dr: -3, dg: -5, db: -1 },
+  { dr: 13, dg: 4, db: 1 },
+  { dr: 8, dg: 1, db: 3 },
+  { dr: 4, dg: 1, db: 6 },
+  { dr: 2, dg: 0, db: 2 },
+  { dr: 0, dg: 0, db: 2 }
+ 
+])
+
+const NUDGE_PATH_WHITE_TO_BLACK = Object.freeze([
+  { dr: 8, dg: -10, db: -10 },
+  { dr: 2, dg: 0, db: 2 },
+  { dr: 4, dg: 1, db: 6 },
+  { dr: 8, dg: 1, db: 3 },
+  { dr: 13, dg: 4, db: 1 },
+  { dr: 10, dg: 3, db: 8 },
+  { dr: 9, dg: -0, db: 15 },
+  { dr: 3, dg: 0, db: 25 }
+])
+
+
+
 export const DEFAULT_SWAP_PARAMS = Object.freeze({
   colOut: { r: 0, g: 0, b: 0 },
   // colOut: { r: 230, g: 224, b: 255 },
@@ -47,13 +73,13 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
   // colIn: { r: 14, g: 10, b: 200 },
   // colIn: { r: 0, g: 0, b: 220 },
 
-  //black to white
+  //outer black to white
   nOo: [
     // { t: 0.65, dr: +0, dg: +3,  db: +12, width: 0.3, strength: 1.0 },
     // { t: 0.70, dr: +0, dg: +18,  db: +6, width: 0.3, strength: 1.0 },
     // { t: 0.75, dr: +8, dg: +10, db: +0, width: 0.3, strength: 1.0 },
     // { t: 0.55, dr: +0, dg: +1, db: +0, width: 0.3, strength: 1.0 }
-    { t: 0.50, dr: +5, dg: +0,  db: +0, wid: 0.05, str: 1.0 },
+    // { t: 0.50, dr: +0, dg: +0,  db: +0, wid: 0.05, str: 1.0 },
     // { t: 0.54, dr: +3, dg: +8,  db: +0, width: 0.05, strength: 1.0 },
     // { t: 0.52, dr: +1, dg: +4, db: +4, width: 0.05, strength: 1.0 },
     // { t: 0.50, dr: +0, dg: +3, db: +6, width: 0.05, strength: 1.0 },
@@ -75,8 +101,9 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
     // { t: 0.8, dr: +0, dg: +4,  db: +12, width: 0.3, strength: 1.0 },
     // { t: 0.6, dr: +0, dg: +8,  db: +8, width: 0.3, strength: 1.0 },
     // { t: 0.3, dr: +12, dg: +10, db: +0, width: 0.3, strength: 1.0 },
-    // { t: 0.1, dr: +8, dg: +1, db: +0, width: 0.3, strength: 1.0 }],
+    // { t: 0.1, dr: +8, dg: +1, db: +0, width: 0.3, strength: 1.0 },
 
+    //good one 
     { t: 0.40, dr: +8, dg: +1,  db: +0, wid: 0.1, str: 1.0 },
     { t: 0.42, dr: +4, dg: +8,  db: +0, wid: 0.1, str: 1.0 },
     { t: 0.44, dr: +2, dg: +6, db: +6, wid: 0.1, str: 1.0 },
@@ -90,12 +117,14 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
 
     //inner black to white 
     nIi: [
-      { t: 0.50, dr: +0, dg: +0,  db: +5, wid: 0.15, str: 1.0 },
+
+      //was +8 on blue
+      // { t: 0.50, dr: +0, dg: +0,  db: +0, wid: 0.15, str: 0.5 },
    
-      // { t: 0.0, dr: +0, dg: +3,  db: +2, width: 0.3, strength: 1.0 },
-      // { t: 0.1, dr: +0, dg: +8,  db: +6, width: 0.3, strength: 1.0 },
-      // { t: 0.3, dr: +8, dg: +3, db: +0, width: 0.3, strength: 1.0 },
-      // { t: 0.6, dr: +6, dg: +1, db: +0, width: 0.3, strength: 1.0 },
+      { t: 0.0, dr: +0, dg: +3,  db: +2, width: 0.3, strength: 1.0 },
+      { t: 0.1, dr: +0, dg: +8,  db: +6, width: 0.3, strength: 1.0 },
+      { t: 0.3, dr: +8, dg: +3, db: +0, width: 0.3, strength: 1.0 },
+      { t: 0.6, dr: +6, dg: +1, db: +0, width: 0.3, strength: 1.0 },
       // { t: 0.40, dr: +0, dg: +13,  db: +14, width: 0.1, strength: 1.0 },
       // { t: 0.45, dr: +0, dg: +10,  db: +20, width: 0.1, strength: 1.0 },
       // { t: 0.55, dr: +13, dg: +15, db: +0, width: 0.1, strength: 1.0 },
@@ -151,12 +180,24 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
   wCols: 24,
   wRows: 60,
   // Global per-token additive RGB nudge along token id 0 → gNmax (default
-  // 1440). With gNm set, lerps start → mid in the first half of that range and
-  // mid → end in the second half; without mid, lerps start → end. Applied after
-  // chromatic nudges to give each piece a subtle hue offset.
-  gNs: { dr: 0, dg: 0, db: 15 },
-  gNm: { dr: 0, dg: 0, db: 0 },
-  gNe: { dr: 0, dg: 0, db: 15 },
+  // 1440). `gN` is an ordered list of RGB deltas (≥2); token t in [0,1] walks
+  // the polyline evenly across segments (from minuteIndex only). Legacy:
+  // gNs/gNe with optional gNm. Applied after chromatic nudges.
+  // The outer rect (“background”) can use separate polylines per swap leg:
+  //   gNBgOuterToInner — when the background lerp is colOut → colIn
+  //   gNBgInnerToOuter — when the background lerp is colIn → colOut
+  // If either is missing or has fewer than two points, `gN` is used for that
+  // leg. The inner hull always uses `gN` (and the same gNMidHalf envelope).
+  // When gNMidHalf > 0, the nudge strength is scaled by a tent in swap leg
+  // progress localP centered at 0.5 (full strength at the cross-fade midpoint,
+  // 0 at 0.5 ± gNMidHalf). Omit or set 0 to apply the full nudge at all times.
+  gNMidHalf: 0.0,
+  // gN: NUDGE_PATH_BLACK_TO_WHITE,
+  
+  //black to white 
+  gNBgOuterToInner: NUDGE_PATH_BLACK_TO_WHITE,
+  //white to black
+  gNBgInnerToOuter: NUDGE_PATH_WHITE_TO_BLACK,
   gNmax: 1440,
   // Only y-wave parameters are used.
 })
@@ -394,50 +435,83 @@ function applyChromaticNudges(base, nudges, p) {
   return _nudgeOut
 }
 
+function deltaRgbFromNudge(n) {
+  if (!n) return { dr: 0, dg: 0, db: 0 }
+  return {
+    dr: n.dr != null ? n.dr : (n.r != null ? n.r : 0),
+    dg: n.dg != null ? n.dg : (n.g != null ? n.g : 0),
+    db: n.db != null ? n.db : (n.b != null ? n.b : 0),
+  }
+}
+
+function globalNudgeMidEnvelope(localP, swap) {
+  const half = swap && swap.gNMidHalf > 0 ? swap.gNMidHalf : 0
+  if (half <= 0) return 1
+  const p = localP == null ? 0 : clamp(localP, 0, 1)
+  return clamp(1 - Math.abs(p - 0.5) / half, 0, 1)
+}
+
 const _tokenNudgeOut = { r: 0, g: 0, b: 0 }
-function applyTokenGlobalNudge(base, minuteIndex, swap) {
+function applyTokenGlobalNudge(base, minuteIndex, swap, localP, pathOverride) {
+  const path = (Array.isArray(pathOverride) && pathOverride.length >= 2)
+    ? pathOverride
+    : (swap && Array.isArray(swap.gN) ? swap.gN : null)
   const s = swap && swap.gNs
   const m = swap && swap.gNm
   const e = swap && swap.gNe
-  if (!s && !m && !e) {
+  if ((!path || path.length < 2) && !s && !m && !e) {
     _tokenNudgeOut.r = base.r
     _tokenNudgeOut.g = base.g
     _tokenNudgeOut.b = base.b
     return _tokenNudgeOut
   }
-  const maxIdx = swap && swap.gNmax > 0
-    ? swap.gNmax
-    : 1440
+  const maxIdx = swap && swap.gNmax > 0 ? swap.gNmax : 1440
   const t = clamp((minuteIndex | 0) / maxIdx, 0, 1)
-  const sdr = s && s.dr != null ? s.dr : (s && s.r != null ? s.r : 0)
-  const sdg = s && s.dg != null ? s.dg : (s && s.g != null ? s.g : 0)
-  const sdb = s && s.db != null ? s.db : (s && s.b != null ? s.b : 0)
-  const edr = e && e.dr != null ? e.dr : (e && e.r != null ? e.r : 0)
-  const edg = e && e.dg != null ? e.dg : (e && e.g != null ? e.g : 0)
-  const edb = e && e.db != null ? e.db : (e && e.b != null ? e.b : 0)
   let dr
   let dg
   let db
-  if (m) {
-    const mdr = m.dr != null ? m.dr : (m.r != null ? m.r : 0)
-    const mdg = m.dg != null ? m.dg : (m.g != null ? m.g : 0)
-    const mdb = m.db != null ? m.db : (m.b != null ? m.b : 0)
-    if (t <= 0.5) {
-      const u = t * 2
-      dr = lerp(sdr, mdr, u)
-      dg = lerp(sdg, mdg, u)
-      db = lerp(sdb, mdb, u)
-    } else {
-      const u = (t - 0.5) * 2
-      dr = lerp(mdr, edr, u)
-      dg = lerp(mdg, edg, u)
-      db = lerp(mdb, edb, u)
-    }
+  if (path && path.length >= 2) {
+    const seg = path.length - 1
+    const tf = t * seg
+    const i = Math.min(Math.floor(tf), seg - 1)
+    const u = tf - i
+    const a = deltaRgbFromNudge(path[i])
+    const b = deltaRgbFromNudge(path[i + 1])
+    dr = lerp(a.dr, b.dr, u)
+    dg = lerp(a.dg, b.dg, u)
+    db = lerp(a.db, b.db, u)
   } else {
-    dr = lerp(sdr, edr, t)
-    dg = lerp(sdg, edg, t)
-    db = lerp(sdb, edb, t)
+    const sdr = s && s.dr != null ? s.dr : (s && s.r != null ? s.r : 0)
+    const sdg = s && s.dg != null ? s.dg : (s && s.g != null ? s.g : 0)
+    const sdb = s && s.db != null ? s.db : (s && s.b != null ? s.b : 0)
+    const edr = e && e.dr != null ? e.dr : (e && e.r != null ? e.r : 0)
+    const edg = e && e.dg != null ? e.dg : (e && e.g != null ? e.g : 0)
+    const edb = e && e.db != null ? e.db : (e && e.b != null ? e.b : 0)
+    if (m) {
+      const mdr = m.dr != null ? m.dr : (m.r != null ? m.r : 0)
+      const mdg = m.dg != null ? m.dg : (m.g != null ? m.g : 0)
+      const mdb = m.db != null ? m.db : (m.b != null ? m.b : 0)
+      if (t <= 0.5) {
+        const u = t * 2
+        dr = lerp(sdr, mdr, u)
+        dg = lerp(sdg, mdg, u)
+        db = lerp(sdb, mdb, u)
+      } else {
+        const u = (t - 0.5) * 2
+        dr = lerp(mdr, edr, u)
+        dg = lerp(mdg, edg, u)
+        db = lerp(mdb, edb, u)
+      }
+    } else {
+      dr = lerp(sdr, edr, t)
+      dg = lerp(sdg, edg, t)
+      db = lerp(sdb, edb, t)
+    }
   }
+  const env = globalNudgeMidEnvelope(localP, swap)
+  dr *= env
+  dg *= env
+  db *= env
   _tokenNudgeOut.r = clamp(base.r + dr, 0, 255)
   _tokenNudgeOut.g = clamp(base.g + dg, 0, 255)
   _tokenNudgeOut.b = clamp(base.b + db, 0, 255)
@@ -453,9 +527,22 @@ function lerpRgb(a, b, t) {
   }
 }
 
-function applyChromaticPost(base, minuteIndex, swap, localP, manualNudges) {
+function applyChromaticPost(base, minuteIndex, swap, localP, manualNudges, gNPathOverride) {
   const chroma = applyChromaticNudges(base, manualNudges, localP)
-  return applyTokenGlobalNudge(chroma, minuteIndex, swap)
+  return applyTokenGlobalNudge(chroma, minuteIndex, swap, localP, gNPathOverride)
+}
+
+function pickBackgroundGlobalNudgePath(swap, outerStart, outerEnd) {
+  if (!swap) return
+  const O = swap.colOut
+  const I = swap.colIn
+  if (outerStart === O && outerEnd === I) {
+    const p = swap.gNBgOuterToInner
+    if (Array.isArray(p) && p.length >= 2) return p
+  } else if (outerStart === I && outerEnd === O) {
+    const p = swap.gNBgInnerToOuter
+    if (Array.isArray(p) && p.length >= 2) return p
+  }
 }
 
 // Returns { outerR,outerG,outerB, innerR,innerG,innerB } as integers 0..255.
@@ -514,8 +601,9 @@ export function computeSwapColors(secondInMinute, minuteIndex, gridRow, gridRowC
     oB = b.O.b | 0
   } else {
     const outerBase = lerpRgb(b.outerStart, b.outerEnd, b.localP)
+    const outerGn = pickBackgroundGlobalNudgePath(swap, b.outerStart, b.outerEnd)
     const outer = applyChromaticPost(
-      outerBase, minuteIndex, swap, b.localP, b.outerNudges
+      outerBase, minuteIndex, swap, b.localP, b.outerNudges, outerGn
     )
     oR = outer.r
     oG = outer.g
