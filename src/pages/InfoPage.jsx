@@ -5,6 +5,40 @@ import { CanvasView } from '../viewer/CanvasView.jsx'
 
 const INFO_THEME_KEY = 'pieceInfoTheme'
 
+const FAQ_ITEMS = [
+  {
+    question: 'How do I mint?',
+    answer: (
+      <>
+        Click on a minute in the <a href="/gallery" target="_blank" rel="noreferrer">gallery view</a> and click the "Mint" button.
+      </>
+    ),
+  },
+  {
+    question: 'Is the inner shape a clock?',
+    answer: (
+      <>
+        The form comes from extending the hour, minute, and second hands of an analog clock towards the frame edges. The hand nearest the edge is
+        the second hand, the second nearest the minute, and the third nearest the hour. For a reference overlay, open the{' '}
+        <a href="/clock" target="_blank" rel="noreferrer">
+          clock overlay
+        </a>
+        .
+      </>
+    ),
+  },
+  {
+    question: 'How many pieces are in the series?',
+    answer: <>There are 1440 minutes in a day, and the series includes one work for each of those minutes.</>,
+  },
+  {
+    question: 'What is there a jump in the loop?',
+    answer: <>Each minute cycle is based on the hands of a clock, so the minute and hour hands are at a different positions at the start and end of the minute. To see the piece with no loop, click the time to select the current time playback.</>,
+  },
+
+  
+]
+
 function readInfoTheme() {
   try {
     const raw = sessionStorage.getItem(INFO_THEME_KEY)
@@ -38,50 +72,53 @@ export default function InfoPage() {
       </div> */}
       <section className="content-section content-section--info">
         <Container fluid className="px-0">
-          <Row className="g-0">
+          {/* <Row className="g-0">
             <Col md={4} className="content-side-title">
-              <NavLink to="/" className="viewer-title viewer-title--link">
+             
+            </Col>
+            <Col md={8} className="content-main-copy" />
+            
+            <Col md={2} />
+          </Row> */}
+
+          <Row className="g-0 ">
+            <Col md={2} className="content-side-title">
+            <NavLink to="/" className="viewer-title viewer-title--link">
                 Buying Time
               </NavLink>
             </Col>
-            <Col md={4} className="content-main-copy" />
-            <Col md={2} />
-          </Row>
-
-          <Row className="g-0 pt-4">
-            <Col md={2} className="content-side-title">
-              <h3 className="viewer-title">About</h3>
-            </Col>
             <Col md={8} className="content-main-copy">
               <p>
-                Time is the animating force of computation. Artists focus effort over time to create works that show subjects in new light. 
-                Artists sell these creations to support their practice and enable the production of new work.
-                Collectors select and collect these representations of effort over time, supporting the continuation of artistic production. 
+                <br></br>
+              Time is the animating force of computation. Artists focus effort over time to create works that show subjects in new light. 
+              Artists sell these creations to support their practice and enable the production of new work.
+              Collectors select and collect these representations of effort over time, supporting the continuation of artistic production. 
               </p>
+              <br></br>
               <p>
-               
+              Buying Time is a series of 1440 works, each an abstraction of an analog clock moving through one minute of the day.
+              The work can be viewed head-on as a <a href="/day" target="_blank"> 24 hour abstract clock</a>, or in parallel where a <a href="/gallery" target="_blank">pattern emerges from the individual animations</a>. 
+            
               </p>
             </Col>
             <Col md={2} />
           </Row>
 
-          <Row className="g-0 pt-4">
+          {/* <Row className="g-0 pt-4">
             <Col md={2} className="content-side-title">
               <h3 className="viewer-title"></h3>
             </Col>
             <Col md={8} className="content-main-copy">
               <p>
-              Buying Time is a series of 1440 works, each an abstraction of an analog clock moving through one minute of the day.
-              The work can be viewed head-on in a <a href="/day" target="_blank"> 24 hour animation</a>, or in <a href="/gallery" target="_blank">parallel</a> where a pattern emerges from the individual animations. 
               </p> 
              
             </Col>
             <Col md={2} />
-          </Row>
+          </Row> */}
 
           <Row className="g-0 pt-4">
             <Col md={2} className="content-side-title">
-              <h3 className="viewer-title">Background</h3>
+              <h3 className="viewer-title"></h3>
             </Col>
             <Col md={8} className="content-main-copy">
               <p>
@@ -95,17 +132,14 @@ export default function InfoPage() {
 
           <Row className="g-0 pt-4">
             <Col md={2} className="content-side-title">
-              <h3 className="viewer-title">Wrapping</h3>
+              {/* <h3 className="viewer-title">Wrapping</h3> */}
             </Col>
             <Col md={8} className="content-main-copy">
             <p className="">
-                Clock hands are extended on both sides of the axis of rotation, and wrapped in a hull. Some legibility remains - the longest sides are the indicator sides.{' '}
-                <a href="/clock" target="_blank" rel="noreferrer">
-                  Full screen
-                </a>
-                .
+                The moving shape is obtained by extending the hands of an analog clock towards the edges of the frame. The shape can still be read as a clock - the hands closest to the edge are the second, minute and hour. For a visual reference, open the <a href="/clock" target="_blank" rel="noreferrer">clock overlay</a>.
+                
               </p>
-            <div className="info-day-embed">
+            {/* <div className="info-day-embed">
                 <div className="info-day-embed__frame">
                   <div className="piece-viewport">
                     <CanvasView
@@ -123,12 +157,28 @@ export default function InfoPage() {
                     />
                   </div>
                 </div>
-              </div>
+              </div> */}
              
             </Col>
             <Col md={2} />
           </Row>
 
+          <Row className="g-0 pt-4">
+            <Col md={2} className="content-side-title">
+              <h3 className="viewer-title">FAQ</h3>
+            </Col>
+            <Col md={8} className="content-main-copy">
+              <div className="info-faq">
+                {FAQ_ITEMS.map(({ question, answer }) => (
+                  <details key={question} className="info-faq__item">
+                    <summary className="info-faq__summary">{question}</summary>
+                    <div className="info-faq__answer">{answer}</div>
+                  </details>
+                ))}
+              </div>
+            </Col>
+            <Col md={2} />
+          </Row>
 
           <Row className="g-0 pt-4">
             <Col md={2} className="content-side-title">
@@ -136,9 +186,9 @@ export default function InfoPage() {
             </Col>
             <Col md={9} className="content-main-copy">
               <p>
-              Contract address: <a href="https://etherscan.io/address/0x0000000000000000000000000000000000000000" target="_blank">0x0000000000000000000000000000000000000000</a>
+              Contract: <a href="https://etherscan.io/address/0x0000000000000000000000000000000000000000" target="_blank">0x0000000000000000000000000000000000000000</a>
               <br />
-              <a href="https://jonathanchomko.com" target="_blank">jonathanchomko.com</a>
+              Website:  < a href="https://jonathanchomko.com" target="_blank">jonathanchomko.com</a>
                </p>
               
             </Col>

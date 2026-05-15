@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nudge × grayscale explorer</title>
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      --bg: #131316;
+      --panel: #1e1e24;
+      --text: #eaeaf0;
+      --muted: #8888a0;
+      --accent: #6c7cff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      padding: 1.5rem;
+      line-height: 1.45;
+    }
+    h1 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin: 0 0 0.35rem;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 0.85rem;
+      max-width: 40rem;
+      margin-bottom: 1.25rem;
+    }
+    .surface {
+      background: var(--panel);
+      border-radius: 12px;
+      padding: 1.25rem;
+      max-width: 28rem;
+    }
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-bottom: 1rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    label strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-variant-numeric: tabular-nums;
+    }
+    .swatches {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+    .swatch {
+      border-radius: 8px;
+      min-height: 72px;
+      display: flex;
+      align-items: flex-end;
+      padding: 0.5rem 0.6rem;
+      font-size: 0.72rem;
+      font-variant-numeric: tabular-nums;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .swatch span {
+      mix-blend-mode: difference;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+    pre {
+      margin: 1rem 0 0;
+      padding: 0.75rem;
+      background: rgba(0,0,0,0.25);
+      border-radius: 8px;
+      font-size: 0.78rem;
+      overflow-x: auto;
+      color: #c8c8d8;
+    }
+  </style>
+</head>
+<body>
+  <h1>Nudge × grayscale explorer</h1>
+  <p class="sub">
+    Simulates <code>clockHullRenderer</code> additive nudges on a neutral base:
+    each channel is <code>clamp(gray + delta, 0, 255)</code> (same as applying a nudge to r=g=b gray).
+  </p>
+
+  <div class="surface">
+    <label>
+      <span class="row"><strong>Grayscale base</strong><span id="gOut">128</span></span>
+      <input id="gray" type="range" min="0" max="255" value="128" />
+    </label>
+    <label>
+      <span class="row"><strong>Δr</strong><span id="drOut">0</span></span>
+      <input id="dr" type="range" min="-128" max="128" value="0" />
+    </label>
+    <label>
+      <span class="row"><strong>Δg</strong><span id="dgOut">0</span></span>
+      <input id="dg" type="range" min="-128" max="128" value="0" />
+    </label>
+    <label>
+      <span class="row"><strong>Δb</strong><span id="dbOut">0</span></span>
+      <input id="db" type="range" min="-128" max="128" value="0" />
+    </label>
+
+    <div class="swatches">
+      <div class="swatch" id="before" style="background: rgb(128,128,128)">
+        <span>base rgb(128, 128, 128)</span>
+      </div>
+      <div class="swatch" id="after" style="background: rgb(128,128,128)">
+        <span>result rgb(128, 128, 128)</span>
+      </div>
+    </div>
+    <pre id="detail"></pre>
+  </div>
+
+  <script>
+    function clamp(v, a, b) {
+      return v < a ? a : v > b ? b : v
+    }
+
+    function read() {
+      const g = +document.getElementById('gray').value
+      const dr = +document.getElementById('dr').value
+      const dg = +document.getElementById('dg').value
+      const db = +document.getElementById('db').value
+      return { g, dr, dg, db }
+    }
+
+    function apply({ g, dr, dg, db }) {
+      const r = clamp(g + dr, 0, 255)
+      const gg = clamp(g + dg, 0, 255)
+      const b = clamp(g + db, 0, 255)
+      return { r, g: gg, b }
+    }
+
+    function paint() {
+      const inp = read()
+      const out = apply(inp)
+      document.getElementById('gOut').textContent = String(inp.g)
+      document.getElementById('drOut').textContent = String(inp.dr)
+      document.getElementById('dgOut').textContent = String(inp.dg)
+      document.getElementById('dbOut').textContent = String(inp.db)
+
+      const before = document.getElementById('before')
+      const after = document.getElementById('after')
+      before.style.background = `rgb(${inp.g}, ${inp.g}, ${inp.g})`
+      after.style.background = `rgb(${out.r}, ${out.g}, ${out.b})`
+      before.querySelector('span').textContent =
+        `base rgb(${inp.g}, ${inp.g}, ${inp.g})`
+      after.querySelector('span').textContent =
+        `result rgb(${out.r}, ${out.g}, ${out.b})`
+
+      const lost = {
+        r: inp.g + inp.dr !== out.r,
+        g: inp.g + inp.dg !== out.g,
+        b: inp.g + inp.db !== out.b
+      }
+      const lines = [
+        `raw (unclamped): (${inp.g + inp.dr}, ${inp.g + inp.dg}, ${inp.g + inp.db})`,
+        `clamped:         (${out.r}, ${out.g}, ${out.b})`,
+      ]
+      if (lost.r || lost.g || lost.b) {
+        lines.push('note: one or more channels hit 0 or 255 (clamp)')
+      }
+      document.getElementById('detail').textContent = lines.join('\n')
+    }
+
+    ;['gray', 'dr', 'dg', 'db'].forEach(id => {
+      document.getElementById(id).addEventListener('input', paint)
+    })
+    paint()
+  </script>
+</body>
+</html>

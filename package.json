@@ -17,7 +17,12 @@
     "build:embeds": "npm run minify:embed && npm run chunk:embed && npm run minify:embed-grid && npm run chunk:embed-grid && npm run minify:embed-day && npm run chunk:embed-day",
     "bundle:unified-shell": "node ./scripts/bundle-unified-shell.mjs",
     "chunk:unified-shell": "node ./scripts/chunk-unified-shell.mjs",
-    "build:unified-embed": "npm run bundle:unified-shell && npm run chunk:unified-shell"
+    "build:unified-embed": "npm run bundle:unified-shell && npm run chunk:unified-shell",
+    "build:arweave-animation": "node ./scripts/bundle-arweave-animation.mjs",
+    "export:partner": "node ./scripts/partner-export.mjs",
+    "export:partner:thumbnails": "node ./scripts/capture-partner-thumbnails.mjs",
+    "export:partner:thumbnails:contract-svg": "node ./scripts/capture-contract-svg-thumbnails.mjs",
+    "export:partner:csv": "node ./scripts/generate-partner-csv.mjs"
   },
   "dependencies": {
     "@rainbow-me/rainbowkit": "^2.2.10",
@@ -41,6 +46,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.5.0",
     "html-minifier-terser": "^7.2.0",
+    "playwright": "^1.60.0",
     "terser": "^5.47.1",
     "vite": "^8.0.9"
   }

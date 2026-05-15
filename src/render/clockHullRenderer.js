@@ -29,7 +29,8 @@ export const DEFAULT_CLOCK_HULL_PARAMS = Object.freeze({
 // Cross-second is derived from canonical row (plus optional edge advance).
 // Base colors linearly interpolate between colOut and colIn per shape
 // and swap phase. Optional chromatic "nudge" lists apply additive RGB offsets
-// on top of that base lerp. Each nudge:
+// on top of that base lerp; token-global `gN` deltas add to the same sum and
+// the result is clamped once (negative deltas are fine). Each nudge:
 //   { t, dr, dg, db, wid?, str? }  (aliases `width` / `strength` still accepted)
 // where `t` is local progress [0..1], `dr/dg/db` are channel deltas (in RGB
 // units), `wid` is the half-width of a tent falloff around t (default 0.06),
@@ -39,41 +40,44 @@ export const DEFAULT_CLOCK_HULL_PARAMS = Object.freeze({
 // The older `nLegI` / `nLegO` / `nLeg`
 // fields are accepted as fallbacks when a shape-specific list is absent.
 
-//sunrise 
+//sunrise — walk 0→1 with swap localP (black→white). Last vertex should match
+// NUDGE_PATH_WHITE_TO_BLACK[0]; first vertex should match WHITE_TO_BLACK last.
 const NUDGE_PATH_BLACK_TO_WHITE = Object.freeze([
   // { dr: 0, dg: 0, db: 0 },
-  { dr: 0, dg: 0, db: 25 },
-  { dr: 0, dg: 0, db: 20 },
-  { dr: 0, dg: 4, db: 10 },
-  { dr: 7, dg: 4, db: 4 },
-  { dr: 5, dg: 3, db: 1 },
-  { dr: 12, dg: 3, db: 8 },
-  { dr: 20, dg: 1, db: 2 },
-  { dr: 25, dg: 0, db: 12 },
+  { dr: -10, dg: -10, db: 10 },
+  { dr: 0, dg: -10, db: 20 },
+  { dr: 0, dg: 0, db: 0 },
+  // { dr: 7, dg: 4, db: 4 },
+  // { dr: 5, dg: 3, db: 1 },
+  { dr: 12, dg: -9, db: 0 },
+  // { dr: 40, dg: 20, db: -10},
+  { dr: 26, dg: 1, db: -12 },
+  { dr: 8, dg: -20, db: 29 },
   // { dr: 0, dg: -22, db: -25 }
  
 ])
 
-
 //inner 
 const NUDGE_PATH_INNER = Object.freeze([
-  { dr: -10, dg: -4, db: 25},
-  { dr: 0, dg: 0, db: 15 },
-  { dr: 10, dg: 0, db: 15 },
-  { dr: 25, dg: 0, db: 1 },
+  { dr: -21, dg: -21, db: 31},
+  { dr: -4, dg: -10, db: 31 },
+  { dr: 12, dg:  0, db: 18 },
+  { dr: 0, dg: 0, db: 0 },
+  // { dr: 40, dg: 20, db: -10 },
+  { dr: 43, dg: -11, db: 0 },
+  { dr: 35, dg: -9, db: 16 },
+  { dr: -18, dg: -45, db: -45 }
 ])
-//sunset
+//sunset — walk 0→1 with swap localP (white→black). Vertex 0 should match
+// NUDGE_PATH_BLACK_TO_WHITE last; final vertex should match BLACK_TO_WHITE first
+// so the plateau / cycle wrap does not change the global nudge discontinuously.
 const NUDGE_PATH_WHITE_TO_BLACK = Object.freeze([
  
   // { dr: 25, dg: -20, db: -20 },
-  { dr: 0, dg: 0, db: 0},
-  // { dr: 0, dg: 0, db: 15 },
-  // { dr: 0, dg: 0, db: 2 },
-  // { dr: 1, dg: 0, db: 5 },
-  // { dr: 1, dg: 0, db: 8 },
-  // { dr: 8, dg: 0, db: 1 },
+  { dr: 8, dg: -20, db: 29 },
+  { dr: -10, dg: -10, db: 20 },
   { dr: 0, dg: 0, db: 15 },
-  { dr: 0, dg: 0, db: 25 }
+  { dr: -10, dg: -10, db: 10 }
 
 ])
 
@@ -113,7 +117,7 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
 
   //inner white to black
   nIo: [ 
-    { t: 0.5, dr: +14, dg: +0,  db: +0, width: 0.2, strength: 1.0 },
+    // { t: 0.5, dr: +14, dg: +0,  db: +0, width: 0.2, strength: 1.0 },
     // { t: 0.6, dr: +0, dg: +8,  db: +8, width: 0.3, strength: 1.0 },
     // { t: 0.3, dr: +12, dg: +10, db: +0, width: 0.3, strength: 1.0 },
     // { t: 0.1, dr: +8, dg: +1, db: +0, width: 0.3, strength: 1.0 },
@@ -138,7 +142,7 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
    
       // { t: 0.0, dr: +0, dg: +0,  db: +10, width: 0.1, strength: 1.0 },
       // { t: 0.1, dr: +0, dg: +0,  db: +14, width: 0.1, strength: 1.0 },
-     { t: 0.5, dr: +0, dg: +0, db: +14, width: 0.2, strength: 1.0 },
+    //  { t: 0.5, dr: +0, dg: +0, db: +14, width: 0.2, strength: 1.0 },
       // { t: 0.6, dr: +10, dg: +0, db: +0, width: 0.1, strength: 1.0 },
 
       // { t: 0.40, dr: +0, dg: +13,  db: +14, width: 0.1, strength: 1.0 },
@@ -198,7 +202,7 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
   // Global per-token additive RGB nudge along token id 0 → gNmax (default
   // 1440). `gN` is an ordered list of RGB deltas (≥2); token t in [0,1] walks
   // the polyline evenly across segments (from minuteIndex only). Legacy:
-  // gNs/gNe with optional gNm. Applied after chromatic nudges.
+  // gNs/gNe with optional gNm. Applied together with manual nudges (one clamp).
   // The outer rect (“background”) can use separate polylines per swap leg:
   //   gNBgOuterToInner — when the background lerp is colOut → colIn
   //   gNBgInnerToOuter — when the background lerp is colIn → colOut
@@ -208,7 +212,7 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
   // progress localP: full strength at gNMidPeak (default 0.5), 0 at
   // gNMidPeak ± gNMidHalf. Omit or set gNMidHalf to 0 for full nudge at all times.
   gNMidHalf: 0.0,
-  gNMidPeak: 0.7,
+  gNMidPeak: 0.8,
 
   //inner shape
   gN: NUDGE_PATH_INNER,
@@ -414,15 +418,12 @@ function selectChromaticNudges(swap, shape, toInner) {
   return null
 }
 
-// Applies additive RGB nudges near keyframes in local progress space.
-// Returns module scratch; caller must consume before next invocation.
-const _nudgeOut = { r: 0, g: 0, b: 0 }
-function applyChromaticNudges(base, nudges, p) {
+// Sum of additive RGB nudges (local keyframe tents) without clamping. Negative
+// deltas are supported; combining these with token-global nudges before a
+// single clamp avoids double-saturation knees that read as jumps during swaps.
+function sumChromaticNudgeDeltas(nudges, p) {
   if (!nudges || nudges.length === 0) {
-    _nudgeOut.r = base.r
-    _nudgeOut.g = base.g
-    _nudgeOut.b = base.b
-    return _nudgeOut
+    return { dr: 0, dg: 0, db: 0 }
   }
   const pc = p < 0 ? 0 : (p > 1 ? 1 : p)
   let dr = 0, dg = 0, db = 0
@@ -447,10 +448,7 @@ function applyChromaticNudges(base, nudges, p) {
     dg += gain * (delta.dg != null ? delta.dg : (delta.g != null ? delta.g : 0))
     db += gain * (delta.db != null ? delta.db : (delta.b != null ? delta.b : 0))
   }
-  _nudgeOut.r = clamp(base.r + dr, 0, 255)
-  _nudgeOut.g = clamp(base.g + dg, 0, 255)
-  _nudgeOut.b = clamp(base.b + db, 0, 255)
-  return _nudgeOut
+  return { dr, dg, db }
 }
 
 function deltaRgbFromNudge(n) {
@@ -471,8 +469,12 @@ function globalNudgeMidEnvelope(localP, swap) {
   return clamp(1 - Math.abs(p - peak) / half, 0, 1)
 }
 
-const _tokenNudgeOut = { r: 0, g: 0, b: 0 }
-function applyTokenGlobalNudge(base, minuteIndex, swap, localP, pathOverride) {
+// RGB deltas from `gN` / legacy gNs–gNe paths, after gNMid* envelope scaling.
+// `pathT01` optional: when set (e.g. swap `localP` for the outer/background leg),
+// walks the polyline 0→1 with that progress so leg-specific paths line up with
+// the outer lerp and do not jump when switching gNBgOuterToInner ↔ gNBgInnerToOuter.
+// When null, uses minuteIndex / gNmax (inner hull / default).
+function computeTokenGlobalNudgeDelta(minuteIndex, swap, localP, pathOverride, pathT01) {
   const path = (Array.isArray(pathOverride) && pathOverride.length >= 2)
     ? pathOverride
     : (swap && Array.isArray(swap.gN) ? swap.gN : null)
@@ -480,13 +482,12 @@ function applyTokenGlobalNudge(base, minuteIndex, swap, localP, pathOverride) {
   const m = swap && swap.gNm
   const e = swap && swap.gNe
   if ((!path || path.length < 2) && !s && !m && !e) {
-    _tokenNudgeOut.r = base.r
-    _tokenNudgeOut.g = base.g
-    _tokenNudgeOut.b = base.b
-    return _tokenNudgeOut
+    return { dr: 0, dg: 0, db: 0 }
   }
   const maxIdx = swap && swap.gNmax > 0 ? swap.gNmax : 1440
-  const t = clamp((minuteIndex | 0) / maxIdx, 0, 1)
+  const t = pathT01 != null
+    ? clamp(pathT01, 0, 1)
+    : clamp((minuteIndex | 0) / maxIdx, 0, 1)
   let dr
   let dg
   let db
@@ -529,14 +530,10 @@ function applyTokenGlobalNudge(base, minuteIndex, swap, localP, pathOverride) {
     }
   }
   const env = globalNudgeMidEnvelope(localP, swap)
-  dr *= env
-  dg *= env
-  db *= env
-  _tokenNudgeOut.r = clamp(base.r + dr, 0, 255)
-  _tokenNudgeOut.g = clamp(base.g + dg, 0, 255)
-  _tokenNudgeOut.b = clamp(base.b + db, 0, 255)
-  return _tokenNudgeOut
+  return { dr: dr * env, dg: dg * env, db: db * env }
 }
+
+const _tokenNudgeOut = { r: 0, g: 0, b: 0 }
 
 function lerpRgb(a, b, t) {
   const tt = t < 0 ? 0 : (t > 1 ? 1 : t)
@@ -547,15 +544,22 @@ function lerpRgb(a, b, t) {
   }
 }
 
-function applyChromaticPost(base, minuteIndex, swap, localP, manualNudges, gNPathOverride) {
-  const chroma = applyChromaticNudges(base, manualNudges, localP)
-  return applyTokenGlobalNudge(chroma, minuteIndex, swap, localP, gNPathOverride)
+function applyChromaticPost(base, minuteIndex, swap, localP, manualNudges, gNPathOverride, globalPathT) {
+  const dMan = sumChromaticNudgeDeltas(manualNudges, localP)
+  const dGlob = computeTokenGlobalNudgeDelta(minuteIndex, swap, localP, gNPathOverride, globalPathT)
+  _tokenNudgeOut.r = clamp(base.r + dMan.dr + dGlob.dr, 0, 255)
+  _tokenNudgeOut.g = clamp(base.g + dMan.dg + dGlob.dg, 0, 255)
+  _tokenNudgeOut.b = clamp(base.b + dMan.db + dGlob.db, 0, 255)
+  return _tokenNudgeOut
 }
 
 function pickBackgroundGlobalNudgePath(swap, outerStart, outerEnd) {
   if (!swap) return
   const O = swap.colOut
   const I = swap.colIn
+  // Outer uses localP to walk each leg polyline. Jumps at leg/cycle joins are
+  // avoided when gNBgInnerToOuter[0] matches gNBgOuterToInner[last] (white handoff)
+  // and gNBgInnerToOuter[last] matches gNBgOuterToInner[0] (black handoff).
   if (outerStart === O && outerEnd === I) {
     const p = swap.gNBgOuterToInner
     if (Array.isArray(p) && p.length >= 2) return p
@@ -623,7 +627,7 @@ export function computeSwapColors(secondInMinute, minuteIndex, gridRow, gridRowC
     const outerBase = lerpRgb(b.outerStart, b.outerEnd, b.localP)
     const outerGn = pickBackgroundGlobalNudgePath(swap, b.outerStart, b.outerEnd)
     const outer = applyChromaticPost(
-      outerBase, minuteIndex, swap, b.localP, b.outerNudges, outerGn
+      outerBase, minuteIndex, swap, b.localP, b.outerNudges, outerGn, b.localP
     )
     oR = outer.r
     oG = outer.g
@@ -634,9 +638,9 @@ export function computeSwapColors(secondInMinute, minuteIndex, gridRow, gridRowC
     innerBase, minuteIndex, swap, b.localP, b.innerNudges
   )
   return {
-    outerR: oR | 0,
-    outerG: oG | 0,
-    outerB: oB | 0,
+    outerR: clamp(Math.round(oR), 0, 255),
+    outerG: clamp(Math.round(oG), 0, 255),
+    outerB: clamp(Math.round(oB), 0, 255),
     innerR: clamp(Math.round(inner.r), 0, 255),
     innerG: clamp(Math.round(inner.g), 0, 255),
     innerB: clamp(Math.round(inner.b), 0, 255)

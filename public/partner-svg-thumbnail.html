@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Buying Time contract SVG thumbnail</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #000;
+      }
+
+      #preview-root {
+        display: block;
+        line-height: 0;
+      }
+
+      #preview-root svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="preview-root"></div>
+
+    <script type="module">
+      import { buildContractThumbnailSvg } from '/src/export/contractThumbnailSvg.js'
+
+      const params = new URLSearchParams(window.location.search)
+      const tokenIdRaw = Number(params.get('tokenId') ?? 0)
+      const tokenId = Number.isFinite(tokenIdRaw) ? Math.max(0, Math.floor(tokenIdRaw)) : 0
+      const sizeRaw = Number(params.get('size') ?? 1200)
+      const size = Number.isFinite(sizeRaw) ? Math.max(64, Math.floor(sizeRaw)) : 1200
+      const timeRaw = params.get('t')
+      /** Document time offset (seconds on the SVG root timeline) — passed to SVGSVGElement#setCurrentTime. */
+      let documentTimeSec = Number(timeRaw ?? 0)
+      if (!Number.isFinite(documentTimeSec) || documentTimeSec < 0) documentTimeSec = 0
+
+      const wrapper = document.getElementById('preview-root')
+      wrapper.style.width = `${size}px`
+      wrapper.style.height = `${size}px`
+      wrapper.innerHTML = buildContractThumbnailSvg(tokenId)
+
+      const svg = wrapper.querySelector('svg')
+
+      requestAnimationFrame(() => {
+        if (svg && typeof svg.pauseAnimations === 'function') svg.pauseAnimations()
+        if (svg && typeof svg.setCurrentTime === 'function') svg.setCurrentTime(documentTimeSec)
+        requestAnimationFrame(() => {
+          window.__CAPTURE_READY__ = true
+        })
+      })
+    </script>
+  </body>
+</html>

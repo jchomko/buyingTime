@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Buying Time partner thumbnail</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #000;
+      }
+
+      #preview-canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="preview-canvas"></canvas>
+
+    <script type="module">
+      import {
+        DEFAULT_CLOCK_HULL_PARAMS,
+        DEFAULT_SWAP_PARAMS,
+        drawPiece
+      } from '/src/render/clockHullRenderer.js'
+      import { TOTAL_SQUARES, normalizeMinuteIndex, resolveGridDims } from '/src/timeGrid.js'
+
+      const params = new URLSearchParams(window.location.search)
+      const tokenIdRaw = Number(params.get('tokenId') ?? 0)
+      const tokenId = Number.isFinite(tokenIdRaw) ? Math.max(0, Math.floor(tokenIdRaw)) : 0
+      const sizeRaw = Number(params.get('size') ?? 1200)
+      const size = Number.isFinite(sizeRaw) ? Math.max(64, Math.floor(sizeRaw)) : 1200
+      const selectedMinute = normalizeMinuteIndex(tokenId % TOTAL_SQUARES)
+
+      const swapParams = {
+        ...DEFAULT_SWAP_PARAMS,
+        mode: 'y-wave',
+        wRip: true
+      }
+
+      const canvas = document.getElementById('preview-canvas')
+      canvas.width = size
+      canvas.height = size
+      canvas.style.width = `${size}px`
+      canvas.style.height = `${size}px`
+
+      const ctx = canvas.getContext('2d')
+      const dims = resolveGridDims(size, size)
+      const gridRow = Math.floor(selectedMinute / dims.cols)
+
+      drawPiece(
+        ctx,
+        { x: 0, y: 0, w: size, h: size },
+        DEFAULT_CLOCK_HULL_PARAMS,
+        swapParams,
+        25,
+        selectedMinute,
+        gridRow,
+        dims.rows,
+        null
+      )
+
+      window.__CAPTURE_READY__ = true
+    </script>
+  </body>
+</html>
