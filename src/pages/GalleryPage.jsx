@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useWallet } from '../context/useWallet.js'
+import { useVerse } from '../context/useVerse.js'
 import { normalizeMinuteIndex } from '../timeGrid.js'
 import { CanvasView } from '../viewer/CanvasView.jsx'
 
@@ -26,16 +26,16 @@ export default function GalleryPage() {
   const [waveRippleEnabled, setWaveRippleEnabled] = useState(true)
 
   const {
-    walletAccount,
-    walletBusy,
-    walletError,
-    rpcUrl,
-    contractAddress,
-    connectWallet,
-    disconnectWallet,
+    verseUser,
+    accountLabel,
+    verseBusy,
+    verseError,
+    verseConfigured,
+    signIn,
+    signOut,
     refreshSold,
     getSoldMinuteIndices
-  } = useWallet()
+  } = useVerse()
 
   useEffect(() => {
     const onKey = (e) => {
@@ -69,10 +69,9 @@ export default function GalleryPage() {
   return (
     <main className="site-shell">
       <section className="hero-section">
-      {!chromeHidden && (
+        {!chromeHidden && (
           <div className="hero-toolbar">
             <div className="toolbar-actions">
-              
               <label className="fps-toggle">
                 <input
                   type="checkbox"
@@ -89,35 +88,38 @@ export default function GalleryPage() {
                 />
                 <span>Ripple</span>
               </label>
-              {walletAccount ? (
+              {verseUser ? (
                 <>
-                  <span className="wallet-pill mono" title={walletAccount}>
-                    {walletAccount.slice(0, 6)}…{walletAccount.slice(-4)}
+                  <span className="wallet-pill mono" title={accountLabel || 'Verse account'}>
+                    {accountLabel || 'Verse'}
                   </span>
                   <button
                     type="button"
                     className="toggle-button"
-                    disabled={walletBusy || !rpcUrl || !contractAddress}
+                    disabled={verseBusy || !verseConfigured}
                     onClick={refreshSold}
                   >
-                    Refresh sold
+                    Refresh
                   </button>
-                  <button type="button" className="toggle-button" onClick={disconnectWallet}>
-                    Disconnect
+                  <button type="button" className="toggle-button" onClick={signOut}>
+                    Sign out
                   </button>
                 </>
-              ) : null}
+              ) : (
+                <button
+                  type="button"
+                  className="toggle-button"
+                  disabled={verseBusy}
+                  onClick={signIn}
+                >
+                  Sign in
+                </button>
+              )}
             </div>
-            {walletError && <div className="wallet-banner">{walletError}</div>}
+            {verseError && <div className="wallet-banner">{verseError}</div>}
           </div>
         )}
         <div className="viewer-frame">
-          {/* <ViewerBrand
-            chromeHidden={chromeHidden}
-            walletAccount={walletAccount}
-            walletBusy={walletBusy}
-            onConnect={connectWallet}
-          /> */}
           <CanvasView
             mode="gallery"
             showFps={showFps}

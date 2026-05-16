@@ -64,7 +64,7 @@ const NUDGE_PATH_INNER = Object.freeze([
   { dr: 12, dg:  0, db: 18 },
   { dr: 0, dg: 0, db: 0 },
   // { dr: 40, dg: 20, db: -10 },
-  { dr: 43, dg: -11, db: 0 },
+  { dr: 15, dg: -11, db: 0 },
   { dr: 35, dg: -9, db: 16 },
   { dr: -18, dg: -45, db: -45 }
 ])
@@ -84,10 +84,10 @@ const NUDGE_PATH_WHITE_TO_BLACK = Object.freeze([
 
 
 export const DEFAULT_SWAP_PARAMS = Object.freeze({
-  colOut: { r: 0, g: 0, b: 0 },
+  colOut: { r: 5, g: 0, b: 0 },
   // colOut: { r: 230, g: 224, b: 255 },
   // colOut: { r: 204, g: 40, b: 40 },
-  colIn: { r: 255, g: 255, b: 255 },
+  colIn: { r: 235, g: 235, b: 255 },
   // colIn: { r: 8, g: 8, b: 12 },
   // colIn: { r: 14, g: 10, b: 200 },
   // colIn: { r: 0, g: 0, b: 220 },
@@ -98,10 +98,10 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
     // { t: 0.70, dr: +0, dg: +18,  db: +6, width: 0.3, strength: 1.0 },
     // { t: 0.75, dr: +8, dg: +10, db: +0, width: 0.3, strength: 1.0 },
     // { t: 0.55, dr: +0, dg: +1, db: +0, width: 0.3, strength: 1.0 }
-    // { t: 0.50, dr: +0, dg: +0,  db: +0, wid: 0.05, str: 1.0 },
-    // { t: 0.54, dr: +3, dg: +8,  db: +0, width: 0.05, strength: 1.0 },
-    // { t: 0.52, dr: +1, dg: +4, db: +4, width: 0.05, strength: 1.0 },
-    // { t: 0.50, dr: +0, dg: +3, db: +6, width: 0.05, strength: 1.0 },
+    { t: 0.50, dr: +0, dg: +0,  db: +0, wid: 0.05, str: 1.0 },
+    { t: 0.54, dr: +3, dg: +8,  db: +0, width: 0.05, strength: 1.0 },
+    { t: 0.52, dr: +1, dg: +4, db: +4, width: 0.05, strength: 1.0 },
+    { t: 0.50, dr: +0, dg: +3, db: +6, width: 0.05, strength: 1.0 },
    
   ],
   
@@ -123,10 +123,10 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
     // { t: 0.1, dr: +8, dg: +1, db: +0, width: 0.3, strength: 1.0 },
 
     //good one 
-    // { t: 0.40, dr: +8, dg: +1,  db: +0, wid: 0.1, str: 1.0 },
-    // { t: 0.42, dr: +4, dg: +8,  db: +0, wid: 0.1, str: 1.0 },
-    // { t: 0.44, dr: +2, dg: +6, db: +6, wid: 0.1, str: 1.0 },
-    // { t: 0.46, dr: +0, dg: +2, db: +8, wid: 0.1, str: 1.0 },
+    { t: 0.40, dr: +8, dg: +1,  db: +0, wid: 0.1, str: 1.0 },
+    { t: 0.42, dr: +4, dg: +8,  db: +0, wid: 0.1, str: 1.0 },
+    { t: 0.44, dr: +2, dg: +6, db: +6, wid: 0.1, str: 1.0 },
+    { t: 0.46, dr: +0, dg: +2, db: +8, wid: 0.1, str: 1.0 },
   ],
 
     // { t: 0.45, dr: +0, dg: +5,  db: +32, width: 0.1, strength: 1.0 },
@@ -865,8 +865,8 @@ export function drawPiece(
  * second), using `computeHandAngles` and `handCapsuleCenterline` — same
  * geometry as `emitHand` / `buildHullPoints`, not a separate analog clock.
  *
- * Mint-site only: not imported by embed-day-preview / unified-clock-shell, so
- * esbuild drops this export from those inline bundles.
+ * Mint-site only: not imported by the unified on-chain shell bundle, so esbuild
+ * drops this export from that inline bundle.
  *
  * @param {CanvasRenderingContext2D} ctx
  * @param {{ x: number, y: number, w: number, h: number }} bounds  Cell in canvas pixels

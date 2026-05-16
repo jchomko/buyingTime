@@ -47,9 +47,9 @@ function drawSoldMinuteMarkers(ctx, canvasW, canvasH, cols, rows, soldSet) {
   const cellW = canvasW / cols
   const cellH = canvasH / rows
   const N = cols * rows
-  const dotR = Math.max(1.25, Math.min(cellW, cellH) * 0.055)
+  const dotR = Math.max(2.45, Math.min(cellW, cellH) * 0.055)
   ctx.save()
-  ctx.fillStyle = 'rgba(252, 83, 83, 0.68)'
+  ctx.fillStyle = 'rgba(255, 44, 44, 0.88)'
   for (let i = 0; i < N; i++) {
     if (!soldSet.has(i)) continue
     const row = (i / cols) | 0

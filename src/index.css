@@ -466,6 +466,15 @@ a.toggle-button.toolbar-page-link {
   outline-offset: 4px;
 }
 
+.work-meta-status {
+  margin: 0.35rem 0 0;
+  max-width: min(92vw, 28rem);
+  font-size: var(--font-size-body);
+  line-height: 1.35;
+  color: #ffc9c9;
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.85);
+}
+
 .work-meta-owner {
   font-size: var(--font-size-body);
   font-weight: 400;

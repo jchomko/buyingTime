@@ -1,23 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import {
-  useChainId,
-  useReadContract,
-  useSwitchChain,
-  useWaitForTransactionReceipt,
-  useWriteContract
-} from 'wagmi'
 import { ViewerBrand } from '../components/ViewerBrand.jsx'
-import {
-  readTokenOwner,
-  readTokenOwnerDisplay
-} from '../lib/readPurchasedTokenIds.js'
-import { useWallet } from '../context/useWallet.js'
+import { useVerse } from '../context/useVerse.js'
 import { getMinuteIndexFromDate } from '../render/clockHullRenderer.js'
 import { CanvasView } from '../viewer/CanvasView.jsx'
 import {
   TOTAL_SQUARES,
-  formatOwnerDisplay,
   formatWorkTime,
   normalizeMinuteIndex
 } from '../timeGrid.js'
@@ -33,28 +21,6 @@ function useNow(intervalMs = 1000) {
 
 const PIECE_MINUTE_KEY = 'pieceSelectedMinute'
 const INFO_THEME_KEY = 'pieceInfoTheme'
-
-function isAlreadyMintedContractError(err) {
-  const s = `${err?.shortMessage || ''} ${err?.message || ''} ${err?.cause?.message || ''}`.toLowerCase()
-  return s.includes('already minted')
-}
-
-const BUYING_TIME_WRITE_ABI = [
-  {
-    type: 'function',
-    name: 'pricePerPiece',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }]
-  },
-  {
-    type: 'function',
-    name: 'mintInvite',
-    stateMutability: 'payable',
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
-    outputs: [{ name: '', type: 'uint256' }]
-  }
-]
 
 function rgbToCss({ r, g, b }) {
   return `rgb(${r}, ${g}, ${b})`
@@ -112,11 +78,6 @@ function readStoredPieceMinute() {
 }
 
 export default function PiecePage() {
-  const expectedChainId = useMemo(() => {
-    const raw = (import.meta.env.VITE_CHAIN_ID || '31337').trim()
-    const id = Number.parseInt(raw, 10)
-    return Number.isFinite(id) ? id : 31337
-  }, [])
   const navigate = useNavigate()
   const [selectedIndex, setSelectedIndex] = useState(readStoredPieceMinute)
   const now = useNow(1000)
@@ -126,25 +87,28 @@ export default function PiecePage() {
   }, [now, selectedIndex])
 
   const [showFps, setShowFps] = useState(false)
-  const [gridLayoutMode, setGridLayoutMode] = useState('factor-fit')
   const [chromeHidden, setChromeHidden] = useState(true)
   const [waveRippleEnabled, setWaveRippleEnabled] = useState(true)
-
-  const ownerByTokenRef = useRef(new Map())
-  const [workOwnerLine, setWorkOwnerLine] = useState('')
-  const [mintTxHash, setMintTxHash] = useState(null)
   const [mintError, setMintError] = useState('')
   const alreadyMintedDialogRef = useRef(null)
+
   const {
-    walletAccount,
-    walletBusy,
-    walletError,
-    rpcUrl,
-    contractAddress,
-    connectWallet,
-    disconnectWallet,
-    refreshSold
-  } = useWallet()
+    verseUser,
+    accountLabel,
+    verseBusy,
+    verseError,
+    verseConfigured,
+    signIn,
+    signOut,
+    refreshSold,
+    purchaseMinute,
+    isMinuteSold,
+    soldTick,
+    projectReady,
+    catalogMeta,
+    isMinuteInCatalog
+  } = useVerse()
+  void soldTick
 
   useEffect(() => {
     try {
@@ -154,87 +118,6 @@ export default function PiecePage() {
       /* ignore */
     }
   }, [selectedIndex])
-
-  const resolveOwnerDisplay = useCallback(async (idx) => {
-    if (!rpcUrl || !contractAddress) return ''
-    const ensRpcUrl = (import.meta.env.VITE_ENS_RPC_URL || '').trim() || undefined
-    return readTokenOwnerDisplay({
-      rpcUrl,
-      contractAddress,
-      tokenId: idx,
-      ensRpcUrl
-    })
-  }, [rpcUrl, contractAddress])
-
-  const { data: pricePerPiece } = useReadContract({
-    address: contractAddress || undefined,
-    abi: BUYING_TIME_WRITE_ABI,
-    functionName: 'pricePerPiece',
-    chainId: expectedChainId,
-    query: {
-      enabled: !!contractAddress
-    }
-  })
-
-  const { writeContractAsync, isPending: isMintSubmitting } = useWriteContract()
-  const chainId = useChainId()
-  const { switchChainAsync } = useSwitchChain()
-  const { isLoading: isMintConfirming, isSuccess: isMintConfirmed } = useWaitForTransactionReceipt({
-    hash: mintTxHash
-  })
-
-  useEffect(() => {
-    if (!isMintConfirmed) return
-    const idx = normalizeMinuteIndex(displayMinuteIndex)
-    refreshSold()
-      .then(() => resolveOwnerDisplay(idx))
-      .then((ownerLabel) => {
-        ownerByTokenRef.current.set(idx, ownerLabel)
-        setWorkOwnerLine(formatOwnerDisplay(ownerLabel))
-        setMintError('')
-      })
-      .catch((err) => {
-        setMintError(err?.shortMessage || err?.message || String(err))
-      })
-      .finally(() => setMintTxHash(null))
-  }, [isMintConfirmed, displayMinuteIndex, refreshSold, resolveOwnerDisplay])
-
-  useEffect(() => {
-    const idx = normalizeMinuteIndex(displayMinuteIndex)
-    let cancelled = false
-    const apply = (fn) => {
-      queueMicrotask(() => {
-        if (!cancelled) fn()
-      })
-    }
-    if (!rpcUrl || !contractAddress) {
-      apply(() => setWorkOwnerLine(''))
-      return () => {
-        cancelled = true
-      }
-    }
-    const cached = ownerByTokenRef.current.get(idx)
-    if (cached !== undefined) {
-      apply(() => setWorkOwnerLine(formatOwnerDisplay(cached)))
-      return () => {
-        cancelled = true
-      }
-    }
-    apply(() => setWorkOwnerLine('…'))
-    resolveOwnerDisplay(idx)
-      .then((value) => {
-        if (cancelled) return
-        ownerByTokenRef.current.set(idx, value)
-        setWorkOwnerLine(formatOwnerDisplay(value))
-      })
-      .catch(() => {
-        if (cancelled) return
-        setWorkOwnerLine('')
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [displayMinuteIndex, rpcUrl, contractAddress, resolveOwnerDisplay])
 
   useEffect(() => {
     const onKey = (e) => {
@@ -268,98 +151,38 @@ export default function PiecePage() {
     navigate('/gallery')
   }, [navigate])
 
-  const handleConnectClick = useCallback(async () => {
+  const handleSignInClick = useCallback(async () => {
     setMintError('')
-    await connectWallet()
-  }, [connectWallet])
-
-  const syncOwnerAndSoldAfterMintedSlot = useCallback(
-    (idx) => {
-      return refreshSold()
-        .then(() => resolveOwnerDisplay(idx))
-        .then((ownerLabel) => {
-          ownerByTokenRef.current.set(idx, ownerLabel)
-          setWorkOwnerLine(formatOwnerDisplay(ownerLabel))
-        })
-    },
-    [refreshSold, resolveOwnerDisplay]
-  )
+    await signIn()
+  }, [signIn])
 
   const handleMintClick = useCallback(async () => {
     setMintError('')
-    if (!walletAccount) {
-      setMintError('Connect wallet first.')
+    if (!verseConfigured) {
+      setMintError('Set VITE_VERSE_ARTWORK_ID before minting.')
       return
     }
-    if (!contractAddress) {
-      setMintError('Set VITE_CONTRACT_ADDRESS before minting.')
+    if (!projectReady) {
+      setMintError('Loading Verse catalog…')
       return
     }
     const idx = normalizeMinuteIndex(displayMinuteIndex)
-    try {
-      if (chainId !== expectedChainId) {
-        await switchChainAsync({ chainId: expectedChainId })
-      }
-      if (rpcUrl && contractAddress) {
-        const ownerAddr = await readTokenOwner({
-          rpcUrl,
-          contractAddress,
-          tokenId: idx
-        })
-        if (ownerAddr) {
-          syncOwnerAndSoldAfterMintedSlot(idx).catch(() => {})
-          alreadyMintedDialogRef.current?.showModal()
-          return
-        }
-      }
-      const tokenId = BigInt(idx)
-      const txHash = await writeContractAsync({
-        address: contractAddress,
-        abi: BUYING_TIME_WRITE_ABI,
-        functionName: 'mintInvite',
-        args: [tokenId],
-        value: pricePerPiece ?? 0n,
-        chainId: expectedChainId
-      })
-      setMintTxHash(txHash)
-    } catch (err) {
-      if (isAlreadyMintedContractError(err)) {
-        syncOwnerAndSoldAfterMintedSlot(idx).catch(() => {})
+    if (isMinuteSold(idx)) {
+      alreadyMintedDialogRef.current?.showModal()
+      return
+    }
+    const result = await purchaseMinute(idx, {
+      onUnavailable: () => {
         alreadyMintedDialogRef.current?.showModal()
-        return
       }
-      setMintError(err?.shortMessage || err?.message || String(err))
+    })
+    if (!result.ok && result.error) {
+      setMintError(result.error)
     }
-  }, [
-    walletAccount,
-    contractAddress,
-    rpcUrl,
-    chainId,
-    expectedChainId,
-    switchChainAsync,
-    writeContractAsync,
-    pricePerPiece,
-    displayMinuteIndex,
-    syncOwnerAndSoldAfterMintedSlot
-  ])
+  }, [verseConfigured, projectReady, displayMinuteIndex, isMinuteSold, purchaseMinute])
 
-  const ownerDisplay =
-    !rpcUrl || !contractAddress
-      ? ''
-      : workOwnerLine === '…'
-        ? '…'
-        : workOwnerLine || ''
-
-  const isMinted =
-    Boolean(ownerDisplay) &&
-    ownerDisplay !== '…' &&
-    ownerDisplay !== 'Not minted'
-
-  const mintSlotOwnerTitle = (() => {
-    const idx = normalizeMinuteIndex(displayMinuteIndex)
-    const raw = ownerByTokenRef.current.get(idx)
-    return typeof raw === 'string' && raw !== 'Not minted' ? raw : ''
-  })()
+  const idx = normalizeMinuteIndex(displayMinuteIndex)
+  const isSold = verseConfigured && isMinuteSold(idx)
 
   const goNow = () => {
     setSelectedIndex(null)
@@ -368,17 +191,6 @@ export default function PiecePage() {
     } catch {
       /* ignore */
     }
-  }
-
-  const handleCellClick = (idx) => {
-    const m = normalizeMinuteIndex(idx)
-    setSelectedIndex(m)
-    try {
-      sessionStorage.setItem(PIECE_MINUTE_KEY, String(m))
-    } catch {
-      /* ignore quota / private mode */
-    }
-    navigate('/')
   }
 
   const captureInfoTheme = useCallback(() => {
@@ -392,7 +204,19 @@ export default function PiecePage() {
     }
   }, [])
 
-  const triedMinuteLabel = formatWorkTime(normalizeMinuteIndex(displayMinuteIndex))
+  const triedMinuteLabel = formatWorkTime(idx)
+  const bannerError = mintError || verseError
+  const catalogHint =
+    verseConfigured &&
+    projectReady &&
+    catalogMeta?.mintableMin != null &&
+    catalogMeta?.mintableMax != null &&
+    verseUser &&
+    !isSold &&
+    !isMinuteInCatalog(idx)
+      ? `Verse catalog: ${formatWorkTime(catalogMeta.mintableMin)}–${formatWorkTime(catalogMeta.mintableMax)} only — use ← →`
+      : null
+  const footStatus = bannerError || catalogHint
 
   return (
     <main className="site-shell site-shell--fullscreen">
@@ -401,7 +225,7 @@ export default function PiecePage() {
         <p className="mint-blocked-dialog__body">
           <span className="mono">{triedMinuteLabel}</span>
           {' '}
-          is not available. Another wallet may have minted it first, or your sold list was out of date.
+          is not available. Someone may have purchased it on Verse first, or the availability list was out of date.
         </p>
         <div className="mint-blocked-dialog__actions">
           <form method="dialog">
@@ -419,11 +243,9 @@ export default function PiecePage() {
         </div>
       </dialog>
       <section className="hero-section">
-      
         {!chromeHidden && (
           <div className="hero-toolbar">
             <div className="toolbar-actions">
-              
               <label className="fps-toggle">
                 <input
                   type="checkbox"
@@ -448,39 +270,38 @@ export default function PiecePage() {
                   Now
                 </button>
               )}
-              {walletAccount ? (
+              {verseUser ? (
                 <>
-                  <span className="wallet-pill mono" title={walletAccount}>
-                    {walletAccount.slice(0, 6)}…{walletAccount.slice(-4)}
+                  <span className="wallet-pill mono" title={accountLabel || 'Verse account'}>
+                    {accountLabel || 'Verse'}
                   </span>
                   <button
                     type="button"
                     className="toggle-button"
-                    disabled={walletBusy || !rpcUrl || !contractAddress}
+                    disabled={verseBusy || !verseConfigured}
                     onClick={refreshSold}
                   >
-                    Refresh sold
+                    Refresh
                   </button>
-                  <button type="button" className="toggle-button" onClick={disconnectWallet}>
-                    Disconnect
+                  <button type="button" className="toggle-button" onClick={signOut}>
+                    Sign out
                   </button>
                 </>
               ) : (
                 <button
                   type="button"
                   className="toggle-button"
-                  disabled={walletBusy}
+                  disabled={verseBusy}
                   onClick={() => {
                     setMintError('')
-                    connectWallet()
+                    signIn()
                   }}
                 >
-                  Connect
+                  Sign in
                 </button>
               )}
             </div>
-            {walletError && <div className="wallet-banner">{walletError}</div>}
-            {mintError && <div className="wallet-banner">{mintError}</div>}
+            {bannerError && <div className="wallet-banner">{bannerError}</div>}
           </div>
         )}
 
@@ -538,39 +359,39 @@ export default function PiecePage() {
                 >
                   {formatWorkTime(displayMinuteIndex)}
                 </p>
-                {!walletAccount ? (
+                {!verseUser ? (
                   <button
                     type="button"
                     className="work-meta-mint-button mono"
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleConnectClick()
+                      handleSignInClick()
                     }}
-                    disabled={walletBusy}
-                    title="Open wallet connect modal"
+                    disabled={verseBusy}
+                    title="Sign in with Verse"
                   >
-                    {walletBusy ? '…' : 'Connect'}
+                    {verseBusy ? '…' : 'Sign in'}
                   </button>
-                ) : isMinted ? (
+                ) : isSold ? (
                   <span
                     className="work-meta-mint-button mono work-meta-owner-inline"
-                    title={mintSlotOwnerTitle || undefined}
+                    title="This minute is sold on Verse"
                   >
-                    {ownerDisplay}
+                    Sold
                   </span>
                 ) : (
-                  <button
-                    type="button"
-                    className="work-meta-mint-button mono"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleMintClick()
-                    }}
-                    disabled={walletBusy || isMintSubmitting || isMintConfirming}
-                    title="Mint this minute"
-                  >
-                    {walletBusy || isMintSubmitting || isMintConfirming ? '…' : 'Mint'}
-                  </button>
+                <button
+                  type="button"
+                  className="work-meta-mint-button mono"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleMintClick()
+                  }}
+                  disabled={verseBusy || !verseConfigured || !projectReady}
+                  title="Purchase this minute on Verse"
+                >
+                  {verseBusy ? '…' : 'Mint'}
+                </button>
                 )}
                 <button
                   type="button"
@@ -585,6 +406,11 @@ export default function PiecePage() {
                   →
                 </button>
               </div>
+              {footStatus ? (
+                <p className="work-meta-status mono" role="alert">
+                  {footStatus}
+                </p>
+              ) : null}
             </div>
           </div>
         </div>

@@ -10,7 +10,7 @@ const FAQ_ITEMS = [
     question: 'How do I mint?',
     answer: (
       <>
-        Click on a minute in the <a href="/gallery" target="_blank" rel="noreferrer">gallery view</a> and click the "Mint" button.
+        Pick a minute in the <a href="/gallery" target="_blank" rel="noreferrer">gallery view</a>, sign in with Verse, and click Mint to purchase through Verse.
       </>
     ),
   },
