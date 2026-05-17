@@ -10,12 +10,12 @@ const FAQ_ITEMS = [
     question: 'How do I mint?',
     answer: (
       <>
-        Pick a minute in the <a href="/gallery" target="_blank" rel="noreferrer">gallery view</a>, sign in with Verse, and click Mint to purchase through Verse.
+        Pick a minute in the <a href="/gallery" target="_blank" rel="noreferrer">gallery view</a>, sign in with Verse, and click Mint to purchase through your Verse account or wallet.
       </>
     ),
   },
   {
-    question: 'Is the inner shape a clock?',
+    question: 'What is the inner shape based on?',
     answer: (
       <>
         The form comes from extending the hour, minute, and second hands of an analog clock towards the frame edges. The hand nearest the edge is
@@ -35,6 +35,14 @@ const FAQ_ITEMS = [
     question: 'What is there a jump in the loop?',
     answer: <>Each minute cycle is based on the hands of a clock, so the minute and hour hands are at a different positions at the start and end of the minute. To see the piece with no loop, click the time to select the current time playback.</>,
   },
+  {
+    question: 'Is the work on-chain?',
+    answer: <>The html/js code for the work is embedded on the Ethereum blockchain and served directly from the tokenURI. The thumbnails are stored on Arweave.</>,
+  },
+  {
+    question: 'What views are available in the token?',
+      answer: <>Minted tokens have three views that can be selected: the 1 minute loop, the 1 minute grid view loop, and a 24 hour time-synced view. These viewes can by cycled by clicking the minted work, or by using the keys 'd' for the 24 hour view, 'g' for the 1 minute grid view, and 't' for the 1 minute loop.</>,
+    },
 
   
 ]
@@ -90,14 +98,14 @@ export default function InfoPage() {
             <Col md={8} className="content-main-copy">
               <p>
                 <br></br>
-              Time is the animating force of computation. Artists focus effort over time to create works that show subjects in new light. 
+              Artists focus effort over time to create works that show subjects in new light. 
               Artists sell these creations to support their practice and enable the production of new work.
-              Collectors select and collect these representations of effort over time, supporting the continuation of artistic production. 
+              Collectors select and collect works, supporting the continuation of artistic production. 
               </p>
               <br></br>
               <p>
               Buying Time is a series of 1440 works, each an abstraction of an analog clock moving through one minute of the day.
-              The work can be viewed head-on as a <a href="/day" target="_blank"> 24 hour abstract clock</a>, or in parallel where a <a href="/gallery" target="_blank">pattern emerges from the individual animations</a>. 
+              The work can be viewed head-on as a 24 hour<a href="/day" target="_blank"> abstract clock</a>, or in <a href="/gallery" target="_blank">parallel as a grid</a>, where a pattern emerges from the individual works. 
             
               </p>
             </Col>
@@ -122,7 +130,7 @@ export default function InfoPage() {
             </Col>
             <Col md={8} className="content-main-copy">
               <p>
-              Buying Time continues a series of works that explore <a href="https://proofofwork.jonathanchomko.com" target="_blank">market valuation</a>, <a href="https://constant.jonathanchomko.com" target="_blank">collective production</a> and <a href="https://aestheticconstant.jonathanchomko.com/" target="_blank">visual abstraction</a>. My aim with this piece was to create a series  that offered multiple perspectives on the same dataset, the individual elements contributing to a larger collective composition. 
+              Buying Time continues a series of works that explore <a href="https://proofofwork.jonathanchomko.com" target="_blank">market valuation</a>, <a href="https://constant.jonathanchomko.com" target="_blank">collective production</a> and <a href="https://aestheticconstant.jonathanchomko.com/" target="_blank">visual abstraction</a>. My aim with this piece was to create a series that offered multiple perspectives on the same dataset, the individual elements contributing to a larger collective composition. 
               </p>
               
               
@@ -130,38 +138,7 @@ export default function InfoPage() {
             <Col md={2} />
           </Row>
 
-          <Row className="g-0 pt-4">
-            <Col md={2} className="content-side-title">
-              {/* <h3 className="viewer-title">Wrapping</h3> */}
-            </Col>
-            <Col md={8} className="content-main-copy">
-            <p className="">
-                The moving shape is obtained by extending the hands of an analog clock towards the edges of the frame. The shape can still be read as a clock - the hands closest to the edge are the second, minute and hour. For a visual reference, open the <a href="/clock" target="_blank" rel="noreferrer">clock overlay</a>.
-                
-              </p>
-            {/* <div className="info-day-embed">
-                <div className="info-day-embed__frame">
-                  <div className="piece-viewport">
-                    <CanvasView
-                      mode="square"
-                      showFps={false}
-                      selectedIndex={null}
-                      gridLayoutMode="factor-fit"
-                      waveRippleEnabled
-                      getSoldMinuteIndices={undefined}
-                      onSquareHalfStep={undefined}
-                      onCanvasClick={undefined}
-                      onGridCellClick={undefined}
-                      canvasCursor={undefined}
-                      overlayReferenceHands
-                    />
-                  </div>
-                </div>
-              </div> */}
-             
-            </Col>
-            <Col md={2} />
-          </Row>
+         
 
           <Row className="g-0 pt-4">
             <Col md={2} className="content-side-title">
@@ -186,8 +163,8 @@ export default function InfoPage() {
             </Col>
             <Col md={9} className="content-main-copy">
               <p>
-              Contract: <a href="https://etherscan.io/address/0x0000000000000000000000000000000000000000" target="_blank">0x0000000000000000000000000000000000000000</a>
-              <br />
+              {/* Contract: <a href="https://etherscan.io/address/0x0000000000000000000000000000000000000000" target="_blank">0x0000000000000000000000000000000000000000</a> */}
+              {/* <br /> */}
               Website:  < a href="https://jonathanchomko.com" target="_blank">jonathanchomko.com</a>
                </p>
               

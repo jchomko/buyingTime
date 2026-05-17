@@ -4,6 +4,7 @@ import { ViewerBrand } from '../components/ViewerBrand.jsx'
 import { useVerse } from '../context/useVerse.js'
 import { getMinuteIndexFromDate } from '../render/clockHullRenderer.js'
 import { CanvasView } from '../viewer/CanvasView.jsx'
+import { getMintSaleState } from '../lib/saleGate.js'
 import {
   TOTAL_SQUARES,
   formatWorkTime,
@@ -86,6 +87,8 @@ export default function PiecePage() {
     return selectedIndex != null ? selectedIndex : live
   }, [now, selectedIndex])
 
+  const saleState = useMemo(() => getMintSaleState(now), [now])
+
   const [showFps, setShowFps] = useState(false)
   const [chromeHidden, setChromeHidden] = useState(true)
   const [waveRippleEnabled, setWaveRippleEnabled] = useState(true)
@@ -104,9 +107,7 @@ export default function PiecePage() {
     purchaseMinute,
     isMinuteSold,
     soldTick,
-    projectReady,
-    catalogMeta,
-    isMinuteInCatalog
+    projectReady
   } = useVerse()
   void soldTick
 
@@ -158,6 +159,10 @@ export default function PiecePage() {
 
   const handleMintClick = useCallback(async () => {
     setMintError('')
+    if (!saleState.mintEnabled) {
+      setMintError(saleState.closedMessage || 'Minting is not open yet.')
+      return
+    }
     if (!verseConfigured) {
       setMintError('Set VITE_VERSE_ARTWORK_ID before minting.')
       return
@@ -179,7 +184,15 @@ export default function PiecePage() {
     if (!result.ok && result.error) {
       setMintError(result.error)
     }
-  }, [verseConfigured, projectReady, displayMinuteIndex, isMinuteSold, purchaseMinute])
+  }, [
+    saleState.mintEnabled,
+    saleState.closedMessage,
+    verseConfigured,
+    projectReady,
+    displayMinuteIndex,
+    isMinuteSold,
+    purchaseMinute
+  ])
 
   const idx = normalizeMinuteIndex(displayMinuteIndex)
   const isSold = verseConfigured && isMinuteSold(idx)
@@ -206,18 +219,6 @@ export default function PiecePage() {
 
   const triedMinuteLabel = formatWorkTime(idx)
   const bannerError = mintError || verseError
-  const catalogHint =
-    verseConfigured &&
-    projectReady &&
-    catalogMeta?.mintableMin != null &&
-    catalogMeta?.mintableMax != null &&
-    verseUser &&
-    !isSold &&
-    !isMinuteInCatalog(idx)
-      ? `Verse catalog: ${formatWorkTime(catalogMeta.mintableMin)}–${formatWorkTime(catalogMeta.mintableMax)} only — use ← →`
-      : null
-  const footStatus = bannerError || catalogHint
-
   return (
     <main className="site-shell site-shell--fullscreen">
       <dialog ref={alreadyMintedDialogRef} className="mint-blocked-dialog">
@@ -379,6 +380,15 @@ export default function PiecePage() {
                   >
                     Sold
                   </span>
+                ) : !saleState.mintEnabled ? (
+                  <button
+                    type="button"
+                    className="work-meta-mint-button mono"
+                    disabled
+                    title={saleState.opensLabel ? `Opens ${saleState.opensLabel}` : 'Minting not open yet'}
+                  >
+                    Soon
+                  </button>
                 ) : (
                 <button
                   type="button"
@@ -406,11 +416,6 @@ export default function PiecePage() {
                   →
                 </button>
               </div>
-              {footStatus ? (
-                <p className="work-meta-status mono" role="alert">
-                  {footStatus}
-                </p>
-              ) : null}
             </div>
           </div>
         </div>

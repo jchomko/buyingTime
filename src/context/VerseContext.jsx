@@ -5,6 +5,7 @@ import {
   useRef,
   useState
 } from 'react'
+import { getMintSaleState } from '../lib/saleGate.js'
 import { getVerseConfig } from '../lib/verse/config.js'
 import { fetchProjectArtworkState } from '../lib/verse/graphql.js'
 import { loadVerseElementsConstructor } from '../lib/verse/loadVerseElements.js'
@@ -129,6 +130,11 @@ export function VerseProvider({ children }) {
       const fail = (message) => {
         setVerseError(message)
         return { ok: false, error: message }
+      }
+
+      const sale = getMintSaleState()
+      if (!sale.mintEnabled) {
+        return fail(sale.closedMessage || 'Minting is not open yet.')
       }
 
       const idx = normalizeMinuteIndex(minuteIndex)
