@@ -44,14 +44,14 @@ export const DEFAULT_CLOCK_HULL_PARAMS = Object.freeze({
 // NUDGE_PATH_WHITE_TO_BLACK[0]; first vertex should match WHITE_TO_BLACK last.
 const NUDGE_PATH_BLACK_TO_WHITE = Object.freeze([
   // { dr: 0, dg: 0, db: 0 },
-  { dr: -10, dg: -10, db: 10 },
+  { dr: -10, dg: -10, db: 20 },
   { dr: 0, dg: -10, db: 20 },
   { dr: 0, dg: 0, db: 0 },
   // { dr: 7, dg: 4, db: 4 },
   // { dr: 5, dg: 3, db: 1 },
   { dr: 12, dg: -9, db: 0 },
   // { dr: 40, dg: 20, db: -10},
-  { dr: 26, dg: 1, db: -12 },
+  { dr: 26, dg: -8, db: -12 },
   { dr: 8, dg: -20, db: 29 },
   // { dr: 0, dg: -22, db: -25 }
  
@@ -62,7 +62,7 @@ const NUDGE_PATH_INNER = Object.freeze([
   { dr: -21, dg: -21, db: 31},
   { dr: -4, dg: -10, db: 31 },
   { dr: 12, dg:  0, db: 18 },
-  { dr: 0, dg: 0, db: 0 },
+  { dr: 0, dg: -5, db: 0 },
   // { dr: 40, dg: 20, db: -10 },
   { dr: 15, dg: -11, db: 0 },
   { dr: 35, dg: -9, db: 16 },
@@ -84,10 +84,11 @@ const NUDGE_PATH_WHITE_TO_BLACK = Object.freeze([
 
 
 export const DEFAULT_SWAP_PARAMS = Object.freeze({
-  colOut: { r: 5, g: 0, b: 0 },
+  colOut: { r: 0, g: 0, b: 0 },
   // colOut: { r: 230, g: 224, b: 255 },
   // colOut: { r: 204, g: 40, b: 40 },
-  colIn: { r: 235, g: 235, b: 255 },
+  // colIn: { r: 235, g: 235, b: 255 },
+  colIn: { r: 225, g: 225, b: 255 },
   // colIn: { r: 8, g: 8, b: 12 },
   // colIn: { r: 14, g: 10, b: 200 },
   // colIn: { r: 0, g: 0, b: 220 },
@@ -98,20 +99,27 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
     // { t: 0.70, dr: +0, dg: +18,  db: +6, width: 0.3, strength: 1.0 },
     // { t: 0.75, dr: +8, dg: +10, db: +0, width: 0.3, strength: 1.0 },
     // { t: 0.55, dr: +0, dg: +1, db: +0, width: 0.3, strength: 1.0 }
-    { t: 0.50, dr: +0, dg: +0,  db: +0, wid: 0.05, str: 1.0 },
-    { t: 0.54, dr: +3, dg: +8,  db: +0, width: 0.05, strength: 1.0 },
-    { t: 0.52, dr: +1, dg: +4, db: +4, width: 0.05, strength: 1.0 },
-    { t: 0.50, dr: +0, dg: +3, db: +6, width: 0.05, strength: 1.0 },
+    
+    // { t: 0.50, dr: +6, dg: +0,  db: +0, wid: 0.05, str: 1.0 },
+    // { t: 0.54, dr: +12, dg: +0,  db: +0, width: 0.05, strength: 1.0 },
+    // { t: 0.52, dr: +1, dg: +0, db: +12, width: 0.05, strength: 1.0 },
+    // { t: 0.50, dr: +0, dg: +0, db: +6, width: 0.05, strength: 1.0 },
    
+    { t: 0.30, dr: +6, dg: +0,  db: +0, wid: 0.25, str: 1.0 },
+    { t: 0.44, dr: +12, dg: +0,  db: +0, width: 0.25, strength: 1.0 },
+    { t: 0.62, dr: +1, dg: +0, db: +12, width: 0.25, strength: 1.0 },
+    { t: 0.60, dr: +0, dg: +0, db: +6, width: 0.25, strength: 1.0 },
+   
+
   ],
   
     //outer black to white
    nOi: [
   //  { t: 0.55, dr: +10, dg: +0, db: +0, width: 0.3, strength: 1.0 }
-  // { t: 0.40, dr: +0, dg: +1,  db: +12, width: 0.15, strength: 1.0 },
-  // { t: 0.42, dr: +1, dg: +4,  db: +4, width: 0.15, strength: 1.0 },
-  // { t: 0.44, dr: +3, dg: +8, db: +0, width: 0.15, strength: 1.0 },
-  // { t: 0.46, dr: +12, dg: +1, db: +0, width: 0.15, strength: 1.0 },
+  { t: 0.20, dr: +0, dg: +0,  db: +3, width: 0.25, strength: 1.0 },
+  { t: 0.32, dr: +1, dg: +0,  db: +12, width: 0.25, strength: 1.0 },
+  { t: 0.62, dr: +12, dg: +0, db: +0, width: 0.25, strength: 1.0 },
+  { t: 0.76, dr: +3, dg: +0, db: +0, width: 0.25, strength: 1.0 },
    ],
 
 
@@ -123,10 +131,10 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
     // { t: 0.1, dr: +8, dg: +1, db: +0, width: 0.3, strength: 1.0 },
 
     //good one 
-    { t: 0.40, dr: +8, dg: +1,  db: +0, wid: 0.1, str: 1.0 },
-    { t: 0.42, dr: +4, dg: +8,  db: +0, wid: 0.1, str: 1.0 },
-    { t: 0.44, dr: +2, dg: +6, db: +6, wid: 0.1, str: 1.0 },
-    { t: 0.46, dr: +0, dg: +2, db: +8, wid: 0.1, str: 1.0 },
+    { t: 0.30, dr: +4, dg: +0,  db: +0, wid: 0.1, str: 1.0 },
+    { t: 0.42, dr: +12, dg: +0,  db: +0, wid: 0.2, str: 1.0 },
+    { t: 0.62, dr: +2, dg: +0, db: +12, wid: 0.2, str: 1.0 },
+    { t: 0.76, dr: +0, dg: +0, db: +8, wid: 0.1, str: 1.0 },
   ],
 
     // { t: 0.45, dr: +0, dg: +5,  db: +32, width: 0.1, strength: 1.0 },
@@ -145,10 +153,10 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
     //  { t: 0.5, dr: +0, dg: +0, db: +14, width: 0.2, strength: 1.0 },
       // { t: 0.6, dr: +10, dg: +0, db: +0, width: 0.1, strength: 1.0 },
 
-      // { t: 0.40, dr: +0, dg: +13,  db: +14, width: 0.1, strength: 1.0 },
-      // { t: 0.45, dr: +0, dg: +10,  db: +20, width: 0.1, strength: 1.0 },
-      // { t: 0.55, dr: +13, dg: +15, db: +0, width: 0.1, strength: 1.0 },
-      // { t: 0.60, dr: +6, dg: +5, db: +0, width: 0.1, strength: 1.0 }
+      { t: 0.40, dr: +0, dg: +0,  db: +4, width: 0.1, strength: 1.0 },
+      { t: 0.45, dr: +0, dg: +0,  db: +12, width: 0.2, strength: 1.0 },
+      { t: 0.65, dr: +12, dg: +0, db: +0, width: 0.2, strength: 1.0 },
+      { t: 0.60, dr: +4, dg: +0, db: +0, width: 0.1, strength: 1.0 }
     ],
 
   xLead: 1.4,
@@ -162,7 +170,7 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
   // flips once per minute). 2 = cycle compresses to 30s (each cell flips
   // twice per minute, wave front crosses the grid twice). All crossSecond-
   // valued params (wTop, wBot) are interpreted within [0, 60 / cycPm).
-  cycPm: 3,
+  cycPm: 2,
   // Optional cycle-specific y-wave overrides. Cycle index is derived from
   // secondInMinute and repeats when this list is shorter than
   // cycPm. Any omitted field falls back to the global wave*
@@ -212,7 +220,7 @@ export const DEFAULT_SWAP_PARAMS = Object.freeze({
   // progress localP: full strength at gNMidPeak (default 0.5), 0 at
   // gNMidPeak ± gNMidHalf. Omit or set gNMidHalf to 0 for full nudge at all times.
   gNMidHalf: 0.0,
-  gNMidPeak: 0.8,
+  gNMidPeak: 0.5,
 
   //inner shape
   gN: NUDGE_PATH_INNER,
